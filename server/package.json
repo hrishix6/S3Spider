@@ -1,0 +1,47 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "server is backend for S3explorer, a self hosted s3 management app.",
+  "main": "dist/main.js",
+  "private": "true",
+  "scripts": {
+    "dev": "tsc-watch --onSuccess \" nodemon ./dist/main.js\"",
+    "seed_accounts": "tsc-watch --onSuccess \" node ./dist/database/seed.js\""
+  },
+  "keywords": [],
+  "author": "Hrishikesh Pethe",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/argon2": "^0.15.0",
+    "@types/cors": "^2.8.17",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^20.9.2",
+    "@types/pg": "^8.10.9",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
+    "@typescript-eslint/parser": "^6.11.0",
+    "eslint": "^8.54.0",
+    "kysely-codegen": "^0.11.0",
+    "nodemon": "^3.0.1",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.454.0",
+    "@aws-sdk/s3-request-presigner": "^3.454.0",
+    "argon2": "^0.31.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "kysely": "^0.26.3",
+    "mime-types": "^2.1.35",
+    "morgan": "^1.10.0",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  }
+}

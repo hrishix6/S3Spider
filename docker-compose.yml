@@ -1,0 +1,62 @@
+version: '3.8'
+services:
+  db:
+    image: postgres
+    container_name: s3explorer-db
+    restart: always
+    ports:
+      - '5432:5432'
+    env_file:
+      - local.db.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./server/src/database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - postgres
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - db
+    container_name: s3explorer-pgadmin
+    restart: always
+    ports:
+      - '8888:80'
+    env_file:
+      - local.db.env
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - postgres
+
+  # api:
+  #   depends_on:
+  #     - db
+  #   container_name: ss3explorer-server
+  #   image: ss3explorer-server-img
+  #   build:
+  #     dockerfile: ./server/Dockerfile
+  #   env_file:
+  #     - ./server/.env
+  #   ports:
+  #     - '5000:5000'
+  #   networks:
+  #     - postgres
+
+  # ui:
+  #   container_name: s3explorer-client
+  #   image: ss3explorer-client-img
+  #   build:
+  #     dockerfile: ./client/Dockerfile
+  #   ports:
+  #     - '8080:8080'
+  #   networks:
+  #     - postgres
+
+volumes:
+  db_data:
+  pgadmin_data:
+
+networks:
+  postgres:
+    driver: bridge
