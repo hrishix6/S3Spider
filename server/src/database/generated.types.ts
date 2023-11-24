@@ -18,6 +18,7 @@ export interface AccountsUsersJoin {
 }
 
 export interface Users {
+  email: string | null;
   id: Generated<number>;
   password: string;
   role: Generated<UserRole | null>;

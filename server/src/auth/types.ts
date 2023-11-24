@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 const usernameSchema = z.string()
-    .min(1, { message: "email should be a valid address" })
-    .max(10, { message: "username cannot be longer than 10 characters" });
+    .min(1, { message: "username or email cannot be empty" })
+    .max(100, { message: "username or email cannot be longer than 100 characters" });
 
 const passSchema = z.string()
-    .min(5, { message: "password must be atleast 6 characters long" })
+    .min(1, { message: "password cannot be empty" })
 
 export const LoginRequestSchema = z.object({
     username: usernameSchema,
@@ -15,6 +15,7 @@ export const LoginRequestSchema = z.object({
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 export const RegisterRequestSchema = z.object({
+    email: z.string().email().optional(),
     password: passSchema,
     username: usernameSchema
 });

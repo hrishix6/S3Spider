@@ -1,15 +1,10 @@
 import { JwtPayload, JwtPayloadSchema } from "./types";
 import jwt from "jsonwebtoken";
 import { formatZodErrors } from "../app/utils";
+import { Service } from "typedi";
 
-export interface IJwtService {
-    signToken(payload: JwtPayload, key: string): Promise<string>
-    verifyToken(token: string, key: string): Promise<JwtPayload>
-}
-
-
-export class JwtService implements IJwtService {
-
+@Service()
+export class JwtService {
     signToken(payload: JwtPayload, key: string) {
         return new Promise<string>((resolve, reject) => {
             jwt.sign(payload, key, { expiresIn: '1h' }, (error, token) => {

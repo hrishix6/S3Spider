@@ -1,20 +1,19 @@
+import { Container } from "typedi";
 import { S3Client } from "@aws-sdk/client-s3"
 import { AwsAccount, AwsAccountsListSchema } from "./types";
 import { formatZodErrors } from "../app/utils";
 
-const clients: Record<string, S3Client> = {};
-
 export function getClient(account_id: string) {
-    return clients[account_id];
+    return Container.get(account_id) as S3Client;
 }
 
 function registerClient(account: AwsAccount) {
     const { id, client_id, client_region, client_secret } = account;
-    clients[id] = new S3Client({
+    Container.set(id, new S3Client({
         credentials: { accessKeyId: client_id, secretAccessKey: client_secret },
         region: client_region,
         apiVersion: "2006-03-01"
-    });
+    }));
 }
 
 export function initClients(accountIds: string[]) {

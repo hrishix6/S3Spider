@@ -1,12 +1,20 @@
 import { ErrorRequestHandler, RequestHandler } from "express";
-import { AppDependency } from "./types";
 import { BaseController } from "./base.controller";
 import { IdParseSchema } from "./types";
+import { Service } from "typedi";
+import { ConfigService } from "../config/config.service";
+import { JwtService } from "../auth/jwt.service";
+import { UserRepository } from "../database/user.repository";
 
+@Service()
 export class AppMiddleware extends BaseController {
 
-    constructor(deps: AppDependency) {
-        super(deps);
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly jwtService: JwtService,
+        private readonly userRepository: UserRepository,
+    ) {
+        super();
     }
 
     onGlobalError: ErrorRequestHandler = (err, req, res) => {
@@ -35,7 +43,7 @@ export class AppMiddleware extends BaseController {
     }
 
     onPing: RequestHandler = (req, res) => {
-        const env = this.deps.configService.get<string>('env');
+        const env = this.configService.get<string>('env');
 
         return this.ok(res, { environment: env, status: "ok" });
     }
@@ -58,9 +66,9 @@ export class AppMiddleware extends BaseController {
             return next();
         }
 
-        const secret = this.deps.configService.get<string>("jwt_secret");
+        const secret = this.configService.get<string>("jwt_secret");
         try {
-            const payload = await this.deps.jwtService.verifyToken(token, secret);
+            const payload = await this.jwtService.verifyToken(token, secret);
             req.headers["x-user-id"] = `${payload.id}`;
         } catch (error) {
             console.error(`error parsing token: ${error}`);
@@ -83,7 +91,7 @@ export class AppMiddleware extends BaseController {
             return this.forbidden(res, `invalid credentials`);
         }
 
-        const user = await this.deps.userRepository.findById(parseUserId.data);
+        const user = await this.userRepository.findById(parseUserId.data);
 
         if (!user) {
             return this.forbidden(res, `invalid credentials`);
@@ -93,25 +101,4 @@ export class AppMiddleware extends BaseController {
 
         return next();
     }
-
-    // adminCheck: RequestHandler = async (req, res, next) => {
-
-    //     if (!req.headers["x-user-id"]) {
-    //         return this.forbidden(res, 'only admins are allowed');
-    //     }
-    //     const id = parseInt(req.headers["x-user-id"] as string, 10);
-    //     const user = await this.deps.userRepo.findById(id);
-
-    //     if (!user) {
-    //         return this.forbidden(res, 'only admins are allowed');
-    //     }
-
-    //     if (!user.is_admin) {
-    //         return this.forbidden(res, 'only admins are allowed');
-    //     }
-
-    //     //let them pass.
-    //     return next();
-    // }
-
 }

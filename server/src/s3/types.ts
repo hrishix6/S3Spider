@@ -1,10 +1,22 @@
 import { z } from "zod";
 
+
+export const PrefixParseSchema = z.string().optional();
+
+export const RequiredKeySchema = z.string().min(1);
+
+export const BucketParseSchema = z.string().min(1);
+
 export const AwsAccountSchema = z.object({
     id: z.string().min(1, { message: "aws id cannot be empty" }),
     client_id: z.string().min(1, { message: "client_id cannot be empty" }),
     client_secret: z.string().min(1, { message: "client_secret cannot be empty" }),
     client_region: z.string().min(1, { message: "region cannot be empty" })
+});
+
+export const DeleteFilesRequest = z.object({
+    bucket: BucketParseSchema,
+    keys: z.array(RequiredKeySchema).min(1)
 });
 
 export type AwsAccount = z.infer<typeof AwsAccountSchema>;

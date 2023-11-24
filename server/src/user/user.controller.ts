@@ -1,17 +1,23 @@
 import { BaseController } from "../app/base.controller";
-import { AppDependency } from "../app/types";
 import { Router, RequestHandler } from "express";
 import AsyncHandler from "express-async-handler";
 import { AppMiddleware } from "../app/middlewares";
+import { Service } from "typedi";
+import { UserRepository } from "../database/user.repository";
 
+@Service()
 export class UserController extends BaseController {
 
-    constructor(deps: AppDependency) {
-        super(deps);
+    constructor(
+        private readonly userRepository: UserRepository,
+        private readonly middlewares: AppMiddleware,
+    ) {
+        super();
     }
 
     onInfo: RequestHandler = async (req, res) => {
-        return this.ok(res, { info: req.user });
+        const { id, verified, username, role } = req.user!;
+        return this.ok(res, { id, verified, username, role });
     }
 
     getAccounts: RequestHandler = async (req, res) => {
@@ -19,22 +25,22 @@ export class UserController extends BaseController {
         const user = req.user!;
 
         if (user.role == "admin") {
-            const allAccounts = await this.deps.userRepository.getAllUsersAccounts();
+            const allAccounts = await this.userRepository.getAllUsersAccounts();
 
             return this.ok(res, { accounts: allAccounts });
         }
 
-        const userAccounts = await this.deps.userRepository.getUserAccounts(user.id);
+        const userAccounts = await this.userRepository.getUserAccounts(user.id);
 
         return this.ok(res, { accounts: userAccounts });
     }
 
-    routes(middlewares: AppMiddleware) {
+    routes() {
         const router = Router();
 
-        router.use(middlewares.parseJwt.bind(middlewares));
+        router.use(this.middlewares.parseJwt.bind(this.middlewares));
 
-        router.use(middlewares.includeUser.bind(middlewares));
+        router.use(this.middlewares.includeUser.bind(this.middlewares));
 
         router.get("/me", AsyncHandler(this.onInfo.bind(this)));
 

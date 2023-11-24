@@ -1,11 +1,8 @@
 import argon2 from "argon2";
+import { Service } from "typedi";
 
-export interface IPasswordService {
-    hash(pw: string): Promise<string>,
-    compare(pw: string, hash: string): Promise<boolean>
-}
-
-export class PasswordService implements IPasswordService {
+@Service()
+export class PasswordService {
 
     async hash(pw: string): Promise<string> {
         return argon2.hash(pw, {

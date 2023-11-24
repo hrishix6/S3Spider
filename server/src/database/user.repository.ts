@@ -1,23 +1,15 @@
 import { Kysely } from "kysely";
-import { InsertUser, User, Account } from "./custom.types";
+import { InsertUser } from "./custom.types";
 import { DB } from "./generated.types";
-
-export interface IUserRepository {
-    insert: (dto: InsertUser) => Promise<number | undefined>;
-    findByUsername: (username: string) => Promise<User | undefined>;
-    findById: (id: number) => Promise<User | undefined>;
-    getUserAccounts: (id: number) => Promise<Account[]>;
-    getAllUsersAccounts: () => Promise<Account[]>;
-}
+import { Inject, Service } from "typedi";
+import { DB_TOKEN } from ".";
 
 
-export class UserRepository implements IUserRepository {
+@Service()
+export class UserRepository {
 
+    @Inject(DB_TOKEN)
     private readonly db: Kysely<DB>;
-
-    constructor(db: Kysely<DB>) {
-        this.db = db;
-    }
 
     async insert(dto: InsertUser) {
         const result = await this.db.insertInto("users").values(dto).returning("id").executeTakeFirst();
@@ -25,10 +17,11 @@ export class UserRepository implements IUserRepository {
         return result?.id
     }
 
-    async findByUsername(username: string) {
-
-        return this.db.selectFrom("users").where("username", "=", username).selectAll().executeTakeFirst();
-
+    async findByUsernameOrmail(arg: string) {
+        return this.db
+            .selectFrom("users")
+            .where((eb) => eb("email", "=", arg.toUpperCase()).or("username", "=", arg))
+            .selectAll().executeTakeFirst();
     }
 
     async findById(id: number) {

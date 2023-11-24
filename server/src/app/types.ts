@@ -1,19 +1,6 @@
-import { IJwtService } from "../auth/jwt.service";
-import { IPasswordService } from "../auth/password.service";
-import { ConfigService } from "../config/config.service";
-import { IUserRepository } from "../database/user.repository";
-import { IS3Service } from "../s3";
 import { z } from "zod";
 
 export const IdParseSchema = z.coerce.number().safe().positive();
-
-export interface AppDependency {
-    configService: ConfigService;
-    s3Service: IS3Service;
-    jwtService: IJwtService;
-    pwService: IPasswordService;
-    userRepository: IUserRepository
-}
 
 export enum HttpStatus {
     NotFound = 404,

@@ -13,6 +13,7 @@ create table if not exists users(
     id serial primary key,
     password text not null,
     username varchar(50) not null,
+    email varchar(100),
     role user_role,
     verified boolean
 );
@@ -20,6 +21,7 @@ create table if not exists users(
 ALTER TABLE users ALTER COLUMN role SET DEFAULT 'user';
 ALTER TABLE users ALTER COLUMN verified SET DEFAULT 'false';
 ALTER TABLE users ADD CONSTRAINT uc_username UNIQUE(username);
+ALTER TABLE users ADD CONSTRAINT uc_email UNIQUE(email);
 
 create table if not exists accounts(
     id serial primary key,

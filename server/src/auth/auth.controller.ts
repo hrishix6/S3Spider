@@ -1,14 +1,24 @@
 import { BaseController } from "../app/base.controller";
-import { AppDependency } from "../app/types";
 import { Router, RequestHandler } from "express";
 import AsyncHandler from "express-async-handler";
 import { LoginRequestSchema, RegisterRequestSchema } from "./types";
 import { formatZodErrors } from "../app/utils";
+import { Service } from "typedi";
+import { UserRepository } from "../database/user.repository";
+import { PasswordService } from "./password.service";
+import { ConfigService } from "../config/config.service";
+import { JwtService } from "./jwt.service";
 
+@Service()
 export class AuthController extends BaseController {
 
-    constructor(deps: AppDependency) {
-        super(deps);
+    constructor(
+        private readonly userRepository: UserRepository,
+        private readonly pwService: PasswordService,
+        private readonly configService: ConfigService,
+        private readonly jwtService: JwtService
+    ) {
+        super();
     }
 
     onLogin: RequestHandler = async (req, res) => {
@@ -23,7 +33,7 @@ export class AuthController extends BaseController {
 
         const { username, password } = result.data;
 
-        const user = await this.deps.userRepository.findByUsername(username);
+        const user = await this.userRepository.findByUsernameOrmail(username);
 
         if (!user) {
             return this.unauthorized(res, 'invalid credentials');
@@ -33,7 +43,7 @@ export class AuthController extends BaseController {
             return this.forbidden(res, 'user is unverified');
         }
 
-        const pwMatch = await this.deps.pwService.compare(password, user.password);
+        const pwMatch = await this.pwService.compare(password, user.password);
 
         if (!pwMatch) {
             return this.unauthorized(res, 'invalid credentials');
@@ -41,8 +51,8 @@ export class AuthController extends BaseController {
 
         //valid credentials
         const payload = { id: user.id };
-        const key = this.deps.configService.get<string>("jwt_secret");
-        const token = await this.deps.jwtService.signToken(payload, key);
+        const key = this.configService.get<string>("jwt_secret");
+        const token = await this.jwtService.signToken(payload, key);
 
         return this.ok(res, {
             access_token: token
@@ -59,11 +69,14 @@ export class AuthController extends BaseController {
             return this.badRequest(res, formatZodErrors(result.error));
         }
 
-        const { password } = result.data;
+        const { password, email } = result.data;
 
-        result.data.password = await this.deps.pwService.hash(password);
+        result.data.password = await this.pwService.hash(password);
+        if (email) {
+            result.data.email = email.toUpperCase();
+        }
 
-        const insertedId = await this.deps.userRepository.insert(result.data);
+        const insertedId = await this.userRepository.insert(result.data);
 
         if (insertedId) {
             return this.created(res, "Sign up success");
@@ -71,6 +84,8 @@ export class AuthController extends BaseController {
 
         return this.serverError(res);
     }
+
+
 
     routes() {
         const router = Router();

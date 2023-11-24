@@ -8,23 +8,15 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getClient } from "./clients";
-import { S3ServiceResult, Disc, File } from "./types";
+import { Disc, File } from "./types";
 import { toFileFromPrefix, toFilefromObj } from "./utils";
+import { Service } from "typedi";
 
-export interface IS3Service {
-    listBuckets: (accId: string) => Promise<S3ServiceResult<Disc[]>>;
-    listDirectChildren: (accId: string, bucket: string, prefix: string) => Promise<S3ServiceResult<File[]>>;
-    getSignedUrlForDL: (accId: string, bucket: string, key: string) => Promise<S3ServiceResult<string>>;
-    getSignedUrlForUL: (acccountId: string, bucket: string, key: string) => Promise<S3ServiceResult<string>>;
-    deleteObjects: (accountId: string, bucket: string, keys: string[]) => Promise<S3ServiceResult<string[]>>;
-    createBucket: (accountId: string, bucket: string) => Promise<S3ServiceResult<string>>;
-    deleteFolder: (acccountId: string, bucket: string, key: string) => Promise<boolean>;
-}
 
-export class S3Service implements IS3Service {
+@Service()
+export class S3Service {
 
     // #region basic-crud
-
     /**
      * Creates new bucket in s3.
      * @param acccountId Aws account id

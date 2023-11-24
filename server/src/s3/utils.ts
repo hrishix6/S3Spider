@@ -24,12 +24,14 @@ export function toFilefromObj(obj: _Object, prefix: string = ""): File | null {
 export function toFileFromPrefix(childFolder: CommonPrefix, parentPrefix: string): File | null {
     const name = childFolder.Prefix ? childFolder.Prefix?.replaceAll(parentPrefix, "") : "";
 
+    const slashRemoved = name.replaceAll("/", "");
+
     if (!name) {
         return null;
     }
 
     return {
-        name,
+        name: slashRemoved,
         key: childFolder.Prefix || "",
         kind: "folder",
         size: 0,

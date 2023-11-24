@@ -2,7 +2,9 @@ import { ConfigModel, EnvironmentVars, ConfigModelSchema } from "./types";
 import { config as loadConfig } from "dotenv";
 import path from "path";
 import { formatZodErrors } from "../app/utils";
+import { Service } from "typedi";
 
+@Service()
 export class ConfigService {
 
     private config: Partial<ConfigModel> = {};

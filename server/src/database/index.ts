@@ -1,7 +1,10 @@
+import { Token } from "typedi";
 import { DB } from "./generated.types";
 import { Pool, PoolConfig } from "pg";
 import { Kysely, PostgresDialect } from "kysely";
 import { InsertUser } from "./custom.types";
+
+export const DB_TOKEN = new Token("db");
 
 export const GetConnection = (config: PoolConfig) => {
     const dialect = new PostgresDialect({
