@@ -8,10 +8,14 @@ const accounts: InsertAccount[] = [
         name: "paper-erp-test",
         aws_id: "604443647261"
     },
-    // {
-    //     name: "paper-erp-prod",
-    //     aws_id: "007385363882"
-    // }
+    {
+        name: "paper-erp-prod",
+        aws_id: "007385363882"
+    },
+    {
+        name: "test-aws-account",
+        aws_id: "191939133"
+    }
 ]
 
 async function seed() {
