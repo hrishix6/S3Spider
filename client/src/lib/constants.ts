@@ -1,4 +1,4 @@
-export const THEME_LOCAL_STORAGE_KEY = "s3explorer_theme";
+export const THEME_LOCAL_STORAGE_KEY = "sS3Spider_theme";
 
 export const APP_NAME = "S3Spider";
 
