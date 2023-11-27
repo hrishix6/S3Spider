@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-
 export const PrefixParseSchema = z.string().optional();
 
 export const RequiredKeySchema = z.string().min(1);
