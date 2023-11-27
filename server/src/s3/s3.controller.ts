@@ -3,28 +3,22 @@ import { BaseController } from "../app/base.controller";
 import { RequestHandler, Router } from "express";
 import AsyncHandler from "express-async-handler";
 import { S3Service } from ".";
-import { IdParseSchema } from "../app/types";
 import { BucketParseSchema, PrefixParseSchema, RequiredKeySchema, DeleteFilesRequest } from "./types";
 import { formatZodErrors } from "../app/utils";
+import { AppMiddleware } from "../app/middlewares";
 
 @Service()
 export class S3Controller extends BaseController {
 
     constructor(
-        private readonly s3Service: S3Service
+        private readonly s3Service: S3Service,
+        private readonly middlewares: AppMiddleware
     ) {
         super();
     }
 
     getBuckets: RequestHandler = async (req, res) => {
         const { accountId } = req.params;
-
-        const accountIdParse = await IdParseSchema.safeParseAsync(accountId);
-
-        if (!accountIdParse.success) {
-            return this.badRequest(res, "invalid account id");
-        }
-
 
         const result = await this.s3Service.listBuckets(accountId);
 
@@ -53,12 +47,6 @@ export class S3Controller extends BaseController {
             return this.badRequest(res, "invalid prefix");
         }
 
-        const accountIdParse = await IdParseSchema.safeParseAsync(accountId);
-
-        if (!accountIdParse.success) {
-            return this.badRequest(res, "invalid account id");
-        }
-
         const result = await this.s3Service.listDirectChildren(accountId, bucketParse.data, prefixParse.data || "");
 
         if (!result.success) {
@@ -82,12 +70,6 @@ export class S3Controller extends BaseController {
 
         if (!keyParse.success) {
             return this.badRequest(res, "invalid key");
-        }
-
-        const accountIdParse = await IdParseSchema.safeParseAsync(accountId);
-
-        if (!accountIdParse.success) {
-            return this.badRequest(res, "invalid account id");
         }
 
         const result = await this.s3Service.getSignedUrlForDL(accountId, bucketParse.data, keyParse.data)
@@ -116,12 +98,6 @@ export class S3Controller extends BaseController {
             return this.badRequest(res, "invalid key");
         }
 
-        const accountIdParse = await IdParseSchema.safeParseAsync(accountId);
-
-        if (!accountIdParse.success) {
-            return this.badRequest(res, "invalid account id");
-        }
-
         const result = await this.s3Service.getSignedUrlForUL(accountId, bucketParse.data, keyParse.data)
 
         if (!result.success) {
@@ -136,12 +112,6 @@ export class S3Controller extends BaseController {
         const { accountId } = req.params;
 
         const { body } = req;
-
-        const accountIdParse = await IdParseSchema.safeParseAsync(accountId);
-
-        if (!accountIdParse.success) {
-            return this.badRequest(res, "invalid account id");
-        }
 
         const bodyParse = await DeleteFilesRequest.safeParseAsync(body);
 
@@ -164,18 +134,21 @@ export class S3Controller extends BaseController {
     routes() {
         const router = Router();
 
+        router.use(this.middlewares.parseJwt.bind(this.middlewares));
+        router.use(this.middlewares.includeUser.bind(this.middlewares));
+
         router.route("/:accountId/buckets")
-            .get(AsyncHandler(this.getBuckets.bind(this)))
+            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getBuckets.bind(this)))
 
         router.route("/:accountId/files")
-            .get(AsyncHandler(this.getChildren.bind(this)))
-            .post(AsyncHandler(this.deleteFiles.bind(this)));
+            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getChildren.bind(this)))
+            .post(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.deleteFiles.bind(this)));
 
         router.route("/:accountId/files/dl")
-            .get(AsyncHandler(this.getPresignedUrlForDL.bind(this)));
+            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getPresignedUrlForDL.bind(this)));
 
         router.route("/:accountId/files/ul")
-            .get(AsyncHandler(this.getPresignedUrlForUL.bind(this)));
+            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getPresignedUrlForUL.bind(this)));
 
 
         return router;

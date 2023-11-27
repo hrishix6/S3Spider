@@ -4,6 +4,9 @@ import AsyncHandler from "express-async-handler";
 import { AppMiddleware } from "../app/middlewares";
 import { Service } from "typedi";
 import { UserRepository } from "../database/user.repository";
+import { UpdateUserAccountsRequest, UpdateUsersRequest } from "../auth/types";
+import { formatZodErrors } from "../app/utils";
+import { IdParseSchema } from "../app/types";
 
 @Service()
 export class UserController extends BaseController {
@@ -15,9 +18,114 @@ export class UserController extends BaseController {
         super();
     }
 
+    onGetUsers: RequestHandler = async (req, res) => {
+        const user = req.user!;
+
+        if (user.role !== "admin") {
+            return this.forbidden(res, 'only admins are allowed');
+        }
+
+        const allUsers = await this.userRepository.getAllUsers();
+
+        return this.ok(res, allUsers);
+    }
+
+    onGetAccounts: RequestHandler = async (req, res) => {
+        const user = req.user!;
+
+        if (user.role !== "admin") {
+            return this.forbidden(res, 'only admins are allowed');
+        }
+
+        const { userId } = req.params;
+
+        const userIdParsed = await IdParseSchema.safeParseAsync(userId);
+
+        if (!userIdParsed.success) {
+            return this.badRequest(res, "invalid user id");
+        }
+
+        const allAwsAccounts = await this.userRepository.getAllAwsAccounts();
+
+        const userAssignedAccountsIds = (await this.userRepository.getUserAccounts(userIdParsed.data)).map(x => x.id);
+
+        const data = allAwsAccounts.map(x => ({ ...x, assigned: userAssignedAccountsIds.includes(x.id) }));
+
+        return this.ok(res, data);
+    }
+
+    onUpdateUsers: RequestHandler = async (req, res) => {
+        const user = req.user!;
+
+        if (user.role !== "admin") {
+            return this.forbidden(res, 'only admins are allowed');
+        }
+
+        const { body } = req;
+
+        const parsedPayload = await UpdateUsersRequest.safeParseAsync(body);
+
+        if (!parsedPayload.success) {
+            return this.badRequest(res, formatZodErrors(parsedPayload.error));
+        }
+
+        const { payload } = parsedPayload.data;
+
+        if (!payload.length) {
+            return this.noContent(res);
+        }
+
+        await this.userRepository.updateUsers(parsedPayload.data);
+
+        return this.noContent(res);
+    }
+
+    onUpdateUserAccounts: RequestHandler = async (req, res) => {
+
+        const user = req.user!;
+
+        if (user.role !== "admin") {
+            return this.forbidden(res, 'only admins are allowed');
+        }
+
+        const { userId } = req.params;
+
+        const userIdParsed = await IdParseSchema.safeParseAsync(userId);
+
+        if (!userIdParsed.success) {
+            return this.badRequest(res, "invalid user id");
+        }
+
+        const { body } = req;
+
+        const parsedPayload = await UpdateUserAccountsRequest.safeParseAsync(body);
+
+        if (!parsedPayload.success) {
+            return this.badRequest(res, formatZodErrors(parsedPayload.error));
+        }
+
+        const { accounts } = parsedPayload.data;
+
+        if (!accounts.length) {
+            return this.noContent(res);
+        }
+
+        await this.userRepository.updateUserAccounts(userIdParsed.data, accounts);
+
+        return this.noContent(res);
+    }
+
     onInfo: RequestHandler = async (req, res) => {
         const { id, verified, username, role } = req.user!;
-        return this.ok(res, { id, verified, username, role });
+
+        if (role == "admin") {
+            const allAccounts = await this.userRepository.getAllAwsAccounts();
+            return this.ok(res, { id, verified, username, role, accounts: allAccounts });
+        }
+
+        const userAccounts = await this.userRepository.getUserAccounts(id);
+
+        return this.ok(res, { id, verified, username, role, accounts: userAccounts });
     }
 
     getAccounts: RequestHandler = async (req, res) => {
@@ -25,7 +133,7 @@ export class UserController extends BaseController {
         const user = req.user!;
 
         if (user.role == "admin") {
-            const allAccounts = await this.userRepository.getAllUsersAccounts();
+            const allAccounts = await this.userRepository.getAllAwsAccounts();
 
             return this.ok(res, { accounts: allAccounts });
         }
@@ -41,6 +149,14 @@ export class UserController extends BaseController {
         router.use(this.middlewares.parseJwt.bind(this.middlewares));
 
         router.use(this.middlewares.includeUser.bind(this.middlewares));
+
+        router.get("/", AsyncHandler(this.onGetUsers.bind(this)));
+
+        router.put("/", AsyncHandler(this.onUpdateUsers.bind(this)));
+
+        router.route("/:userId/accounts")
+            .get(AsyncHandler(this.onGetAccounts.bind(this)))
+            .put(AsyncHandler(this.onUpdateUserAccounts.bind(this)));
 
         router.get("/me", AsyncHandler(this.onInfo.bind(this)));
 
