@@ -32,10 +32,8 @@ process.on("unhandledRejection", (reason, promise) => {
 async function main() {
 
     const configService = Container.get(ConfigService);
-    //load config.
     configService.load();
 
-    //initialize db pool.
     const poolCfg: PoolConfig = {
         host: configService.get("db_host"),
         port: configService.get("db_port"),
@@ -50,9 +48,6 @@ async function main() {
     const db = GetConnection(poolCfg);
     Container.set(DB_TOKEN, db);
 
-
-
-
     try {
         const pwService = Container.get(PasswordService);
 
@@ -63,16 +58,18 @@ async function main() {
             verified: true
         };
 
-        await CreateAdminIfNotExists(db, adminUser);
 
-        //initialize clients
+        await CreateAdminIfNotExists(db, adminUser);
         const accounts = await db.selectFrom("accounts").select("accounts.aws_id").execute();
         initClients(accounts.map(x => x.aws_id));
+
         const app = App.setup();
         const server = http.createServer(app);
-        //proceed to start server.
+
         await listenAsync(server, configService.get<number>("port"));
+
         console.log(`s3explorer-server listning on PORT ${configService.get<number>("port")}`);
+
     } catch (error) {
         console.error(error);
         await db.destroy();
