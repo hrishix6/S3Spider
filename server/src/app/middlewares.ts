@@ -1,6 +1,6 @@
 import { ErrorRequestHandler, RequestHandler } from "express";
 import { BaseController } from "./base.controller";
-import { IdParseSchema } from "./types";
+import { IdParseSchema, awsAccountIdSchema } from "./types";
 import { Service } from "typedi";
 import { ConfigService } from "../config/config.service";
 import { JwtService } from "../auth/jwt.service";
@@ -19,7 +19,6 @@ export class AppMiddleware extends BaseController {
 
     onGlobalError: ErrorRequestHandler = (err, req, res) => {
         console.error(err);
-
         return this.serverError(res);
     }
 
@@ -101,4 +100,32 @@ export class AppMiddleware extends BaseController {
 
         return next();
     }
+
+    awsAccountGuard: RequestHandler = async (req, res, next) => {
+
+        const user = req.user!;
+
+        if (user.role == "admin") {
+            return next();
+        }
+
+        const { accountId } = req.params;
+
+        const accountIdParse = await awsAccountIdSchema.safeParseAsync(accountId);
+
+        if (!accountIdParse.success) {
+            return this.badRequest(res, "invalid account id");
+        }
+
+        const hasAccessToAccount = await this.userRepository.hasAccesstoAccount(user.id, accountIdParse.data);
+
+        if (!hasAccessToAccount) {
+            return this.forbidden(res, "you don't have access to this account");
+        }
+
+
+        next();
+
+    }
+
 }

@@ -1,6 +1,6 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { AppMiddleware } from "./middlewares";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import { AuthController } from "../auth/auth.controller";
 import { UserController } from "../user/user.controller";
 import morgan from "morgan";
@@ -16,10 +16,30 @@ export class App {
         const s3Controller = Container.get(S3Controller)
         app.disable('x-powered-by');
         app.use(morgan("dev"));
-        app.use(cors({
+
+        const origin = process.env.NODE_ENV == "production" ? process.env["FRONTEND_CLIENT"] : "*";
+
+        console.log(`Allowed Origins: ${origin}`);
+
+        const corsOptions: CorsOptions = {
+            origin: origin,
+            optionsSuccessStatus: 200,
             methods: ["GET", "POST", "DELETE", 'PATCH', "PUT", "OPTIONS", "HEAD"],
-        }));
+            credentials: true,
+            allowedHeaders: "*"
+        };
+
+        app.use(cors(corsOptions));
         app.use(express.json());
+
+        app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
+            if (err instanceof SyntaxError) {
+                console.error(err);
+                return res.status(400).json({ success: false, error: "Invalid json" });
+            }
+            next();
+        })
+
         app.use(middlwares.secureHeaders.bind(middlwares));
 
         app.get('/api', middlwares.onPing.bind(middlwares));

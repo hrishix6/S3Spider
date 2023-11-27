@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const IdParseSchema = z.coerce.number().safe().positive();
 
+export const awsAccountIdSchema = z.string().min(1);
+
 export enum HttpStatus {
     NotFound = 404,
     NoContent = 204,
