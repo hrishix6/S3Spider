@@ -28,31 +28,7 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     networks:
       - postgres
-
-  # api:
-  #   depends_on:
-  #     - db
-  #   container_name: ss3explorer-server
-  #   image: ss3explorer-server-img
-  #   build:
-  #     dockerfile: ./server/Dockerfile
-  #   env_file:
-  #     - ./server/.env
-  #   ports:
-  #     - '5000:5000'
-  #   networks:
-  #     - postgres
-
-  # ui:
-  #   container_name: s3explorer-client
-  #   image: ss3explorer-client-img
-  #   build:
-  #     dockerfile: ./client/Dockerfile
-  #   ports:
-  #     - '8080:8080'
-  #   networks:
-  #     - postgres
-
+      
 volumes:
   db_data:
   pgadmin_data:
