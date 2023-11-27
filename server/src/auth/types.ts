@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IdParseSchema } from "../app/types";
 
 const usernameSchema = z.string()
     .min(1, { message: "username or email cannot be empty" })
@@ -20,6 +21,18 @@ export const RegisterRequestSchema = z.object({
     username: usernameSchema
 });
 
+export const UpdateUserInfo = z.object({
+    id: IdParseSchema,
+    verified: z.boolean(),
+    role: z.enum(["admin", "user", "viewer"])
+});
+
+export type UpdateUserDto = z.infer<typeof UpdateUserInfo>;
+
+export const UpdateUsersRequest = z.object({ payload: z.array(UpdateUserInfo) });
+
+export type UpdateUsers = z.infer<typeof UpdateUsersRequest>;
+
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 
 
@@ -28,3 +41,16 @@ export const JwtPayloadSchema = z.object({
 });
 
 export type JwtPayload = z.infer<typeof JwtPayloadSchema>;
+
+export const UpdatedUserAccount = z.object({
+    id: IdParseSchema,
+    name: z.string().optional(),
+    aws_id: z.string().optional(),
+    assigned: z.boolean()
+});
+
+export type UpdatedUserAccounts = z.infer<typeof UpdatedUserAccount>;
+
+export const UpdateUserAccountsRequest = z.object({
+    accounts: z.array(UpdatedUserAccount)
+});

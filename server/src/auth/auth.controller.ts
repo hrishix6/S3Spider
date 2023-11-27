@@ -8,6 +8,7 @@ import { UserRepository } from "../database/user.repository";
 import { PasswordService } from "./password.service";
 import { ConfigService } from "../config/config.service";
 import { JwtService } from "./jwt.service";
+import { Account } from "../database/custom.types";
 
 @Service()
 export class AuthController extends BaseController {
@@ -49,13 +50,27 @@ export class AuthController extends BaseController {
             return this.unauthorized(res, 'invalid credentials');
         }
 
+        let accounts: Account[] = [];
+
+        if (user.role == "admin") {
+            accounts = await this.userRepository.getAllAwsAccounts();
+        }
+        else {
+            accounts = await this.userRepository.getUserAccounts(user.id);
+        }
+
         //valid credentials
         const payload = { id: user.id };
         const key = this.configService.get<string>("jwt_secret");
         const token = await this.jwtService.signToken(payload, key);
 
         return this.ok(res, {
-            access_token: token
+            id: user.id,
+            role: user.role,
+            username: user.username,
+            verified: user.verified,
+            access_token: token,
+            accounts
         });
 
     }
@@ -84,8 +99,6 @@ export class AuthController extends BaseController {
 
         return this.serverError(res);
     }
-
-
 
     routes() {
         const router = Router();
