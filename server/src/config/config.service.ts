@@ -24,6 +24,7 @@ export class ConfigService {
         this.config.jwt_secret = process.env["JWT_SECRET"];
         this.config.port = process.env["PORT"] ? parseInt(process.env["PORT"]) : undefined;
         this.config.env = process.env["NODE_ENV"] || "development";
+        this.config.frontend_url = process.env["FROTEND_CLIENT"];
 
         const validationCheck = ConfigModelSchema.safeParse(this.config);
 
