@@ -1,9 +1,8 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { formatBytes, timeSince } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTableBucket, DataTableFile } from '../../types/files.types';
+import { DataTableFile } from '../../types/files.types';
 import { ClickableFolderCell } from './clickable.folder.cell';
-import { ClickableBucketCell } from './cliickable.bucket.cell';
 
 export const fileColumns: ColumnDef<DataTableFile>[] = [
   {
@@ -82,30 +81,5 @@ export const fileColumns: ColumnDef<DataTableFile>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
-  },
-];
-
-export const bucketColumns: ColumnDef<DataTableBucket>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell(props) {
-      const comp = ClickableBucketCell(props.row);
-      return comp;
-    },
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Created',
-    cell({ row }) {
-      const dstring = row.getValue('createdAt');
-
-      if (!dstring) {
-        return <></>;
-      }
-
-      const humaneReadableDate = timeSince(dstring as string);
-      return <div className="text-muted-foreground">{humaneReadableDate}</div>;
-    },
   },
 ];

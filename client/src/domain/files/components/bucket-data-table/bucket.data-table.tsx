@@ -16,18 +16,16 @@ import {
 import { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { MinusCircle, PlusCircle, UploadCloud } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DataTableBucket } from '../../types/files.types';
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+interface FileDataTableProps {
+  columns: ColumnDef<DataTableBucket>[];
+  data: DataTableBucket[];
 }
 
-export function FileDataTable<TData, TValue>({
-  columns,
-  data,
-}: DataTableProps<TData, TValue>) {
+export function BucketDataTable({ columns, data }: FileDataTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [key, setKey] = useState('');
   const [globalFilter, setGlobalFilter] = useState('');
@@ -67,17 +65,9 @@ export function FileDataTable<TData, TValue>({
           />
         </div>
         <div className="hidden md:flex md:gap-2">
-          <Button variant={'outline'} size={'sm'}>
-            <MinusCircle className="h-5 w-5 mr-2" />
-            Delete
-          </Button>
-          <Button variant={'outline'} size={'sm'}>
-            <PlusCircle className="h-5 w-5 mr-2" />
-            Folder
-          </Button>
           <Button variant={'default'} size={'sm'}>
-            <UploadCloud className="h-5 w-5 mr-2" />
-            Upload
+            <Download className="h-5 w-5 mr-2" />
+            Create Bucket
           </Button>
         </div>
       </div>
@@ -124,7 +114,7 @@ export function FileDataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No Files
+                  No Buckets
                 </TableCell>
               </TableRow>
             )}

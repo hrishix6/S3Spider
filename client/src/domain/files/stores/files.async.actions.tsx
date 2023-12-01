@@ -5,6 +5,7 @@ import {
   setBreadCrumbs,
   setDatatableBuckets,
   setDatatableFiles,
+  setError,
 } from './files.reducer';
 import { RootState } from '@/store';
 import {
@@ -38,25 +39,32 @@ export const handleCrumbClickAsync = createAsyncThunk<void, string>(
 
     const newCrumbs = breadCrumbs.slice(0, clickedCrumbIndex + 1);
 
-    dispatch(setBreadCrumbs(newCrumbs));
-
     const { target } = clickedCrumb;
 
     if (target == 'root') {
       const buckets = await getBuckets(currentAccount);
       if (buckets) {
+        dispatch(setBreadCrumbs(newCrumbs));
         dispatch(setDatatableBuckets(toDataTableBuckets(buckets)));
+      } else {
+        dispatch(setError("Couldn't load buckets under this account"));
       }
     } else {
       if (target == 'bucket') {
         const results = await getChildren(currentAccount, currentBucket);
         if (results) {
+          dispatch(setBreadCrumbs(newCrumbs));
           dispatch(setDatatableFiles(toDataTableFiles(results)));
+        } else {
+          dispatch(setError("Couldn't load files under this bucket"));
         }
       } else if (target == 'folder') {
         const results = await getChildren(currentAccount, currentBucket, key);
         if (results) {
+          dispatch(setBreadCrumbs(newCrumbs));
           dispatch(setDatatableFiles(toDataTableFiles(results)));
+        } else {
+          dispatch(setError("Couldn't load files under this folder"));
         }
       }
     }
@@ -90,6 +98,8 @@ export const handleFolderClickAsync = createAsyncThunk<void, DataTableFile>(
     if (files) {
       dispatch(setDatatableFiles(toDataTableFiles(files)));
       dispatch(addBreadCrumb(newBreadCrumb));
+    } else {
+      dispatch(setError("Couldn't load files under this folder"));
     }
   }
 );
@@ -125,6 +135,8 @@ export const handleBucketClickAsync = createAsyncThunk<void, DataTableBucket>(
           files: toDataTableFiles(files),
         })
       );
+    } else {
+      dispatch(setError("Couldn't load files under this bucket"));
     }
   }
 );
@@ -146,6 +158,7 @@ export const loadBucketsAsync = createAsyncThunk<void, void>(
 
     if (!buckets) {
       dispatch(setDatatableBuckets([]));
+      dispatch(setError("Couldn't load buckets under this account"));
       return;
     }
 

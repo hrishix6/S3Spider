@@ -18,6 +18,7 @@ import {
 const initialState: FilesState = {
   loading: false,
   error: false,
+  errorMsg: '',
   breadCrumbs: defaultBreadcrumbs,
   currentBucket: '',
   dataTable: 'idle',
@@ -48,6 +49,14 @@ const filesSlice = createSlice({
     setDatatableFiles: (state, action: PayloadAction<DataTableFile[]>) => {
       state.dataTable = 'files';
       state.files = action.payload;
+    },
+    setError: (state, action: PayloadAction<string>) => {
+      state.error = true;
+      state.errorMsg = action.payload;
+    },
+    dismissError: (state) => {
+      state.error = false;
+      state.errorMsg = '';
     },
     setAfterBucketClick: (
       state,
@@ -108,6 +117,8 @@ const filesSlice = createSlice({
 export const filesReducer = filesSlice.reducer;
 
 export const {
+  setError,
+  dismissError,
   addBreadCrumb,
   setBreadCrumbs,
   setDatatableType,
@@ -118,7 +129,10 @@ export const {
 
 export const selectFilesLoading = (state: RootState) => state.files.loading;
 export const selectFilesError = (state: RootState) => state.files.error;
+export const selectFilesErrorMsg = (state: RootState) => state.files.errorMsg;
 export const selectBreadCrumbs = (state: RootState) => state.files.breadCrumbs;
 export const selectDatatableType = (state: RootState) => state.files.dataTable;
 export const selectFiles = (state: RootState) => state.files.files;
 export const selectBuckets = (state: RootState) => state.files.buckets;
+export const selectCurrentBucket = (state: RootState) =>
+  state.files.currentBucket;
