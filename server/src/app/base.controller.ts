@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { HttpStatus, ServerResponse } from "./types";
+import { AppErrorCode, HttpStatus, ServerResponse } from "./types";
 
 export class BaseController {
 
@@ -7,35 +7,35 @@ export class BaseController {
         return res.status(HttpStatus.Ok).json(ServerResponse.OkResponse(data));
     }
 
-    protected serverError(res: Response) {
-        return res.status(HttpStatus.InternalServerError).json(ServerResponse.ErrorResponse("internal server error", undefined));
+    protected serverError(res: Response, code: AppErrorCode) {
+        return res.status(HttpStatus.InternalServerError).json(ServerResponse.ErrorResponse(code));
     }
 
     protected created(res: Response, data: any) {
         return res.status(HttpStatus.Created).json(ServerResponse.OkResponse(data));
     }
 
-    protected badRequest(res: Response, errors: any) {
-        return res.status(HttpStatus.BadRequest).json(ServerResponse.ErrorResponse("Bad request", errors));
+    protected badRequest(res: Response, code: AppErrorCode) {
+        return res.status(HttpStatus.BadRequest).json(ServerResponse.ErrorResponse(code));
     }
 
-    protected unauthorized(res: Response, errors: any) {
-        return res.status(HttpStatus.Unauthorized).json(ServerResponse.ErrorResponse("Unauthorized", errors));
+    protected unauthorized(res: Response) {
+        return res.status(HttpStatus.Unauthorized).json(ServerResponse.ErrorResponse(AppErrorCode.TOKEN_EXPIRED));
     }
 
-    protected forbidden(res: Response, errors: any) {
-        return res.status(HttpStatus.Forbidden).json(ServerResponse.ErrorResponse("Forbidden", errors));
+    protected forbidden(res: Response, code: AppErrorCode) {
+        return res.status(HttpStatus.Forbidden).json(ServerResponse.ErrorResponse(code));
     }
 
     protected noContent(res: Response) {
         return res.status(HttpStatus.NoContent).json();
     }
 
-    protected notFound(res: Response, errors: any) {
-        return res.status(HttpStatus.NotFound).json(ServerResponse.ErrorResponse("not found", errors));
+    protected notFound(res: Response, code: AppErrorCode) {
+        return res.status(HttpStatus.NotFound).json(ServerResponse.ErrorResponse(code));
     }
 
-    protected notSupported(res: Response, errors: any) {
-        return res.status(HttpStatus.MethodNotSupported).json(ServerResponse.ErrorResponse("method not supported", errors));
+    protected notSupported(res: Response, code: AppErrorCode) {
+        return res.status(HttpStatus.MethodNotSupported).json(ServerResponse.ErrorResponse(code));
     }
 }

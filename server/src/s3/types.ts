@@ -48,3 +48,19 @@ export interface Disc {
     name: string;
     createdAt?: Date;
 }
+
+export const FileDownloadMetadataReq = z.object({
+    name: z.string().min(1),
+    key: z.string().min(1),
+    mimeType: z.string().min(1)
+});
+
+export type FileDownloadMetadata = z.infer<typeof FileDownloadMetadataReq>;
+
+export const GetSignedUrlsForDLRequest = z.object({
+    files: z.array(FileDownloadMetadataReq).min(1, { message: "no file selected" })
+});
+
+export interface FileDownloadMetadataWithUrl extends FileDownloadMetadata {
+    url: string;
+}

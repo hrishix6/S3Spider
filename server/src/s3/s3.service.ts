@@ -11,6 +11,7 @@ import { getClient } from "./clients";
 import { Disc, File } from "./types";
 import { toFileFromPrefix, toFilefromObj } from "./utils";
 import { Service } from "typedi";
+import { Readable } from "stream";
 
 
 @Service()
@@ -155,6 +156,44 @@ export class S3Service {
 
         return { success, data, error }
 
+    }
+
+    /**
+     * Returns the file from s3 as readable stream
+     * @param acccountId Aws Account Id
+     * @param bucket Bucket name
+     * @param key file key
+     */
+    async getFileStream(acccountId: string, bucket: string, key: string) {
+        const client = getClient(acccountId);
+        let success: boolean;
+        let data: Readable | null;
+        let error: unknown;
+
+        try {
+            const input = new GetObjectCommand({ Bucket: bucket, Key: key });
+            const out = await client.send(input);
+
+            if (!out.Body) {
+                success = false;
+                data = null;
+                error = new Error("No body");
+            }
+            else {
+                success = true;
+                data = out.Body as Readable;
+                error = null;
+            }
+
+        } catch (e) {
+            success = false;
+            data = null;
+            error = e;
+        }
+
+        return {
+            success, data, error
+        }
     }
 
     /**

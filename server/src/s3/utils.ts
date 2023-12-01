@@ -37,3 +37,4 @@ export function toFileFromPrefix(childFolder: CommonPrefix, parentPrefix: string
         size: 0,
     }
 }
+
