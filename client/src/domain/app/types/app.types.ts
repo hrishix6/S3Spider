@@ -25,6 +25,7 @@ export interface AppState {
     awsAccounts: AwsAccounts[];
     noAccounts: boolean;
     userId: number;
+    sessionEnded: boolean;
 }
 
 export enum AppErrorCode {
@@ -90,7 +91,7 @@ export function getToastErrorMessage(errorCode: AppErrorCode): string {
             errorMsg = "Your session has expired, please login"
             break;
         case AppErrorCode.BAD_CREDENTIALS:
-            errorMsg = "Please check your credentials and try again"
+            errorMsg = "Please check your credentials"
             break;
         case AppErrorCode.BAD_SIGNUP:
             errorMsg = "Failed to signup"
@@ -112,7 +113,7 @@ export function getToastErrorMessage(errorCode: AppErrorCode): string {
             errorMsg = "Failed to update aws accounts user has access to";
             break;
         case AppErrorCode.SERVER_NOT_REACHABLE:
-            errorMsg = "Couldn't reach servers, check your internet connection";
+            errorMsg = "Couldn't reach servers.";
             break;
         case AppErrorCode.SERVER_FAILURE:
             errorMsg = "Something went wrong";
@@ -126,4 +127,10 @@ export function getToastErrorMessage(errorCode: AppErrorCode): string {
     }
 
     return errorMsg;
+}
+
+export interface ApiResult<T> {
+    data: T,
+    success: boolean;
+    errorCode: AppErrorCode
 }

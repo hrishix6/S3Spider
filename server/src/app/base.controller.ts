@@ -19,8 +19,8 @@ export class BaseController {
         return res.status(HttpStatus.BadRequest).json(ServerResponse.ErrorResponse(code));
     }
 
-    protected unauthorized(res: Response) {
-        return res.status(HttpStatus.Unauthorized).json(ServerResponse.ErrorResponse(AppErrorCode.TOKEN_EXPIRED));
+    protected unauthorized(res: Response, code: AppErrorCode) {
+        return res.status(HttpStatus.Unauthorized).json(ServerResponse.ErrorResponse(code));
     }
 
     protected forbidden(res: Response, code: AppErrorCode) {

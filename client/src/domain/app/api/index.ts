@@ -1,15 +1,13 @@
-import { getClient } from "@/lib/http.client";
+import { getClient, handleAxiosError } from "@/lib/http.client";
+import { ApiResult, UserInfo } from "../types/app.types";
 
 export async function getUserInfo() {
     try {
         const client = getClient();
         const response = await client.get("/user/me");
-        const { data, success } = response.data;
-        if (success) {
-            return data;
-        }
-        return null;
+        const result = response.data as ApiResult<UserInfo>;
+        return result;
     } catch (error) {
-        return null;
+        throw handleAxiosError(error);
     }
 }

@@ -7,7 +7,7 @@ import { Service } from "typedi";
 export class JwtService {
     signToken(payload: JwtPayload, key: string) {
         return new Promise<string>((resolve, reject) => {
-            jwt.sign(payload, key, { expiresIn: '1h' }, (error, token) => {
+            jwt.sign(payload, key, { expiresIn: '5m' }, (error, token) => {
                 if (error) {
                     reject(error);
                 }

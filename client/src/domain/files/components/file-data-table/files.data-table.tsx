@@ -28,7 +28,7 @@ import {
   downloadFilesAsync,
 } from '../../utils/download.utils';
 import { useAppSelector } from '@/hooks';
-import { selectCurrentAwsAccount } from '../../../app';
+import { AppErrorCode, getToastErrorMessage, selectCurrentAwsAccount } from '../../../app';
 import { selectCurrentBucket } from '../../stores/files.reducer';
 
 interface FileDataTableProps {
@@ -96,12 +96,12 @@ export function FileDataTable({ columns, data }: FileDataTableProps) {
       await downloadFilesAsync(awsAccount, bucket, files);
       toast.success('Done', { id: toastId });
     } catch (error) {
-      const err = error as Error;
-      console.log(err);
-      if (err instanceof MaxDownloadSizeExceededError) {
-        //show error message that file exceeds download limit.
+      console.log(error);
+      if (error instanceof MaxDownloadSizeExceededError) {
+        toast.error("Download size exceeds maximum zip limit of 4GB");
+        return;
       }
-      toast.success('Failed', { id: toastId });
+      toast.error('Failed to download, try again later.', { id: toastId });
     }
   };
 

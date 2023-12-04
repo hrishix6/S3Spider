@@ -79,7 +79,7 @@ export class AppMiddleware extends BaseController {
     includeUser: RequestHandler = async (req, res, next) => {
 
         if (!req.headers["x-user-id"]) {
-            return this.unauthorized(res);
+            return this.unauthorized(res, AppErrorCode.TOKEN_EXPIRED);
         }
 
         const userId = req.headers["x-user-id"];
@@ -87,13 +87,13 @@ export class AppMiddleware extends BaseController {
         const parseUserId = await IdParseSchema.safeParseAsync(userId);
 
         if (!parseUserId.success) {
-            return this.unauthorized(res);
+            return this.unauthorized(res, AppErrorCode.BAD_USERID);
         }
 
         const user = await this.userRepository.findById(parseUserId.data);
 
         if (!user) {
-            return this.unauthorized(res);
+            return this.unauthorized(res, AppErrorCode.BAD_CREDENTIALS);
         }
 
         req.user = user;

@@ -37,18 +37,19 @@ export class AuthController extends BaseController {
         const user = await this.userRepository.findByUsernameOrmail(username);
 
         if (!user) {
-            return this.unauthorized(res);
+            return this.unauthorized(res, AppErrorCode.BAD_CREDENTIALS);
+        }
+
+        const pwMatch = await this.pwService.compare(password, user.password);
+
+        if (!pwMatch) {
+            return this.unauthorized(res, AppErrorCode.BAD_CREDENTIALS);
         }
 
         if (!user.verified) {
             return this.forbidden(res, AppErrorCode.PENDING_VERIFICATION);
         }
 
-        const pwMatch = await this.pwService.compare(password, user.password);
-
-        if (!pwMatch) {
-            return this.unauthorized(res);
-        }
 
         let accounts: Account[] = [];
 

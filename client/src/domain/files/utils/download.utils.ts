@@ -58,19 +58,20 @@ export async function downloadSingleFile(file: FileDownloadMetadataWithUrl) {
 }
 
 export async function downloadFilesAsync(accountId: string, bucket: string, files: FileDownloadMetadata[]) {
-    const dlData = await getDownloadUrls(accountId, bucket, files);
-    if (!dlData) {
+    const result = await getDownloadUrls(accountId, bucket, files);
+
+    if (!result.success) {
         throw new Error("Couldn't get download urls...");
     }
 
-    console.log(`received presigned urls..`);
+    const { data } = result;
 
-    if (dlData.length == 1) {
+    if (data.length == 1) {
         console.log(`downloading single file`);
-        return await downloadSingleFile(dlData[0]);
+        return await downloadSingleFile(data[0]);
     }
 
-    const reqs = dlData.map((x) => fetch(x.url));
+    const reqs = data.map((x) => fetch(x.url));
     const responses = await Promise.all(reqs);
     const fileStream = streamSaver.createWriteStream(`${uuidv4()}.zip`);
     const readableZipStream = new window.ZIP({

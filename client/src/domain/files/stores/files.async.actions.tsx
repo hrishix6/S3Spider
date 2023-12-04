@@ -15,6 +15,7 @@ import {
 } from '../types/files.types';
 import { getBuckets, getChildren } from '../api';
 import { toDataTableBuckets, toDataTableFiles } from '../utils';
+import { AppErrorCode, getToastErrorMessage, setSessionEnded } from '@/domain/app';
 
 export const handleCrumbClickAsync = createAsyncThunk<void, string>(
   'files/handleCrumbClickAsync',
@@ -42,30 +43,71 @@ export const handleCrumbClickAsync = createAsyncThunk<void, string>(
     const { target } = clickedCrumb;
 
     if (target == 'root') {
-      const buckets = await getBuckets(currentAccount);
-      if (buckets) {
-        dispatch(setBreadCrumbs(newCrumbs));
-        dispatch(setDatatableBuckets(toDataTableBuckets(buckets)));
-      } else {
-        dispatch(setError("Couldn't load buckets under this account"));
+      try {
+        const result = await getBuckets(currentAccount);
+        if(!result.success)
+        {
+          dispatch(setError("something went wrong"));
+        }
+        else
+         {
+          dispatch(setBreadCrumbs(newCrumbs));
+          dispatch(setDatatableBuckets(toDataTableBuckets(result.data)));
+         }
+      } catch (error) {
+        const e = error as AppErrorCode;
+        switch(e)
+          {
+            case AppErrorCode.TOKEN_EXPIRED:
+              dispatch(setSessionEnded());
+              break;
+            default:
+              break;
+          }
+        dispatch(setError(getToastErrorMessage(e)));
       }
     } else {
       if (target == 'bucket') {
-        const results = await getChildren(currentAccount, currentBucket);
-        if (results) {
+        try {
+          const result = await getChildren(currentAccount, currentBucket);
+        if (result.success) {
           dispatch(setBreadCrumbs(newCrumbs));
-          dispatch(setDatatableFiles(toDataTableFiles(results)));
+          dispatch(setDatatableFiles(toDataTableFiles(result.data)));
         } else {
           dispatch(setError("Couldn't load files under this bucket"));
         }
+        } catch (error) {
+          switch(error as AppErrorCode)
+          {
+            case AppErrorCode.TOKEN_EXPIRED:
+              dispatch(setSessionEnded());
+              break;
+            default:
+              break;
+          }
+          dispatch(setError(getToastErrorMessage(error as AppErrorCode)));
+        }
+        
       } else if (target == 'folder') {
-        const results = await getChildren(currentAccount, currentBucket, key);
-        if (results) {
+        try {
+          const result = await getChildren(currentAccount, currentBucket, key);
+        if (result.success) {
           dispatch(setBreadCrumbs(newCrumbs));
-          dispatch(setDatatableFiles(toDataTableFiles(results)));
+          dispatch(setDatatableFiles(toDataTableFiles(result.data)));
         } else {
           dispatch(setError("Couldn't load files under this folder"));
         }
+        } catch (error) {
+          switch(error as AppErrorCode)
+          {
+            case AppErrorCode.TOKEN_EXPIRED:
+              dispatch(setSessionEnded());
+              break;
+            default:
+              break;
+          }
+          dispatch(setError(getToastErrorMessage(error as AppErrorCode)));
+        } 
       }
     }
   }
@@ -87,20 +129,32 @@ export const handleFolderClickAsync = createAsyncThunk<void, DataTableFile>(
 
     const { key, name } = folder;
 
-    const files = await getChildren(currentAccount, currentBucket, key);
+    try {
+      const result = await getChildren(currentAccount, currentBucket, key);
+      const newBreadCrumb: BreadCrumb = {
+        key,
+        target: 'folder',
+        text: name,
+      };
 
-    const newBreadCrumb: BreadCrumb = {
-      key,
-      target: 'folder',
-      text: name,
-    };
+      if (result.success) {
+        dispatch(setDatatableFiles(toDataTableFiles(result.data)));
+        dispatch(addBreadCrumb(newBreadCrumb));
+      } else {
+        dispatch(setError("Couldn't load files under this folder"));
+      }
 
-    if (files) {
-      dispatch(setDatatableFiles(toDataTableFiles(files)));
-      dispatch(addBreadCrumb(newBreadCrumb));
-    } else {
-      dispatch(setError("Couldn't load files under this folder"));
-    }
+    } catch (error) {
+      switch(error as AppErrorCode)
+          {
+            case AppErrorCode.TOKEN_EXPIRED:
+              dispatch(setSessionEnded());
+              break;
+            default:
+              break;
+          }
+        dispatch(setError(getToastErrorMessage(error as AppErrorCode)));
+    }   
   }
 );
 
@@ -125,19 +179,32 @@ export const handleBucketClickAsync = createAsyncThunk<void, DataTableBucket>(
       target: 'bucket',
     };
 
-    const files = await getChildren(currentAccount, id);
+    try {
+      const result = await getChildren(currentAccount, id);
 
-    if (files) {
+    if (result.success) {
       dispatch(
         setAfterBucketClick({
           bucket,
           newCrumb: newBreadCrumb,
-          files: toDataTableFiles(files),
+          files: toDataTableFiles(result.data),
         })
       );
     } else {
       dispatch(setError("Couldn't load files under this bucket"));
     }
+    } catch (error) {
+      switch(error as AppErrorCode)
+          {
+            case AppErrorCode.TOKEN_EXPIRED:
+              dispatch(setSessionEnded());
+              break;
+            default:
+              break;
+          }
+       dispatch(setError(getToastErrorMessage(error as AppErrorCode)));
+    }
+    
   }
 );
 
@@ -154,14 +221,29 @@ export const loadBucketsAsync = createAsyncThunk<void, void>(
       return;
     }
 
-    const buckets = await getBuckets(currentAccount);
+    try {
+      const result = await getBuckets(currentAccount);
 
-    if (!buckets) {
+    if (!result.success) {
       dispatch(setDatatableBuckets([]));
       dispatch(setError("Couldn't load buckets under this account"));
       return;
     }
-
-    dispatch(setDatatableBuckets(toDataTableBuckets(buckets)));
+    else{
+      dispatch(setDatatableBuckets(toDataTableBuckets(result.data)));
+    }
+    
+    } catch (error) {
+      switch(error as AppErrorCode)
+          {
+            case AppErrorCode.TOKEN_EXPIRED:
+              dispatch(setSessionEnded());
+              break;
+            default:
+              break;
+          }
+      dispatch(setError(getToastErrorMessage(error as AppErrorCode)));
+    } 
+    
   }
 );

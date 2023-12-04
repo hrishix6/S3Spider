@@ -1,10 +1,9 @@
-import { getClient } from "@/lib/http.client";
+import { getClient, handleAxiosError } from "@/lib/http.client";
 import { LoginDTO, RegisterDTO } from "../types/auth.types";
-import { OperationResult } from "../types/auth.types";
-import { AxiosError } from "axios";
+import { ApiResult, UserInfo } from "../../app"
 
 export async function attemptLogin(body: LoginDTO) {
-    const op: Partial<OperationResult> = {}
+
     try {
         const client = getClient();
         const response = await client.post(
@@ -17,42 +16,14 @@ export async function attemptLogin(body: LoginDTO) {
             }
         );
 
-        const { data, success } = response.data;
-
-        if (success) {
-            op.success = true;
-            op.data = data;
-            op.statusCode = response.status;
-            op.error = null;
-        }
-        else {
-            op.statusCode = response.status;
-            op.success = false;
-            op.data = null;
-            op.error = new Error("something went wrong");
-        }
-
-
+        const result = response.data as ApiResult<UserInfo & { access_token: string }>;
+        return result;
     } catch (error) {
-        if (error instanceof AxiosError) {
-            op.statusCode = error.response?.status;
-            op.success = false;
-            op.data = null;
-            op.error = error;
-        }
-        else {
-            op.statusCode = 500;
-            op.success = false;
-            op.data = null;
-            op.error = new Error("something went wrong");
-        }
+        throw handleAxiosError(error);
     }
-
-    return op as OperationResult;
 }
 
 export async function attemptSignUp(body: RegisterDTO) {
-    const op: Partial<OperationResult> = {}
     try {
 
         const client = getClient();
@@ -66,35 +37,9 @@ export async function attemptSignUp(body: RegisterDTO) {
             }
         );
 
-        const { data, success } = response.data;
-
-        if (success) {
-            op.success = true;
-            op.data = data;
-            op.statusCode = response.status;
-            op.error = null;
-        }
-        else {
-            op.statusCode = response.status;
-            op.success = false;
-            op.data = null;
-            op.error = new Error("something went wrong");
-        }
-
+        const result = response.data as ApiResult<string>;
+        return result;
     } catch (error) {
-        if (error instanceof AxiosError) {
-            op.statusCode = error.response?.status;
-            op.success = false;
-            op.data = null;
-            op.error = error;
-        }
-        else {
-            op.statusCode = 500;
-            op.success = false;
-            op.data = null;
-            op.error = new Error("something went wrong");
-        }
+        throw handleAxiosError(error);
     }
-
-    return op as OperationResult;
 }

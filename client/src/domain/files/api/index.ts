@@ -1,21 +1,17 @@
-import { getClient } from "@/lib/http.client";
-import { FileDownloadMetadata, FileDownloadMetadataWithUrl } from "../types/files.types";
+import { getClient, handleAxiosError } from "@/lib/http.client";
+import { Bucket, File, FileDownloadMetadata, FileDownloadMetadataWithUrl } from "../types/files.types";
+import { ApiResult } from "@/domain/app";
 
 export async function getBuckets(accountId: string) {
     try {
         const client = getClient();
         const response = await client.get(`s3/${accountId}/buckets`);
 
-        const { success, data } = response.data;
+        const result = response.data as ApiResult<Bucket[]>;
 
-        if (success) {
-            return data;
-        }
-
-        return null;
+        return result;
     } catch (error) {
-        console.log(error);
-        return null;
+        throw handleAxiosError(error);
     }
 }
 
@@ -36,19 +32,12 @@ export async function getChildren(
             `s3/${accountId}/files${q ? `?${q}` : ''}`
         );
 
-        const { success, data } = response.data;
-
-        if (success) {
-            return data;
-        }
-
-        return null;
+        const result = response.data as ApiResult<File[]>;
+        return result;
     } catch (error) {
-        console.log(error);
-        return null;
+        throw handleAxiosError(error);
     }
 }
-
 
 export async function getDownloadUrls(accountId: string,
     bucketId: string,
@@ -67,16 +56,10 @@ export async function getDownloadUrls(accountId: string,
         }
         );
 
-        const { success, data } = response.data;
-
-        if (success) {
-            return data as FileDownloadMetadataWithUrl[];
-        }
-
-        return null;
+        const result = response.data as ApiResult<FileDownloadMetadataWithUrl[]>;
+        return result;
     } catch (error) {
-        console.log(error);
-        return null;
+        throw handleAxiosError(error);
     }
 
 }

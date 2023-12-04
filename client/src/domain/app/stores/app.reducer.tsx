@@ -14,6 +14,7 @@ const initialState: AppState = {
   errorMessage: '',
   isAuthenticated: false,
   userId: -1,
+  sessionEnded: false,
 };
 
 const appSlice = createSlice({
@@ -22,6 +23,23 @@ const appSlice = createSlice({
   reducers: {
     toggleMobileSidebar: (state, action: PayloadAction<boolean>) => {
       state.mobileSidebar = action.payload;
+    },
+    setSessionEnded: (state)=> {
+      state.sessionEnded = true;
+    },
+    sessionEndedConfirmation: (state)=> {
+      localStorage.removeItem('token');
+      state.awsAccounts = [];
+      state.noAccounts = false;
+      state.currentAccount = '';
+      state.loading = false;
+      state.error = false;
+      state.mobileSidebar = false;
+      state.role = 'none';
+      state.errorMessage = '';
+      state.isAuthenticated = false;
+      state.userId = -1;
+      state.sessionEnded = false;
     },
     loginSuccess: (state, action: PayloadAction<UserInfo>) => {
       const { id, role, verified, accounts } = action.payload;
@@ -74,6 +92,8 @@ const appSlice = createSlice({
 });
 export const appReducer = appSlice.reducer;
 export const {
+  sessionEndedConfirmation,
+  setSessionEnded,
   toggleMobileSidebar,
   logout,
   loginSuccess,
@@ -91,3 +111,4 @@ export const selectIsAuthenticated = (state: RootState) =>
 export const selectUserAwsAccounts = (state: RootState) =>
   state.app.awsAccounts;
 export const selectIfNoaccounts = (state: RootState) => state.app.noAccounts;
+export const selectAppSessionEnded = (state: RootState)=> state.app.sessionEnded;

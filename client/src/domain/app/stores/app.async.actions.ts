@@ -7,17 +7,19 @@ export const initAppDataAsync = createAsyncThunk<void, void>("app/initAppDataAsy
     const { dispatch, getState } = thunkAPI;
     const rootstate = getState() as RootState;
     const { isAuthenticated } = rootstate.app;
+
     if (isAuthenticated) {
         return;
     }
 
-    const userInfo = await getUserInfo();
-
-    if (!userInfo) {
+    try {
+        const result = await getUserInfo();
+        if (!result.success) {
+            return;
+        }
+        dispatch(loginSuccess(result.data));
+    } catch (error) {
         return;
     }
-
-    dispatch(loginSuccess(userInfo));
-
 });
 
