@@ -16,33 +16,47 @@ import {
 import { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import {
   DataTableFile,
+  FileAction,
   MaxDownloadSizeExceededError,
 } from '../../types/files.types';
 import {
   calculateDownloadMetadata,
   downloadFilesAsync,
 } from '../../utils/download.utils';
-import { useAppSelector } from '@/hooks';
-import { AppErrorCode, getToastErrorMessage, selectCurrentAwsAccount } from '../../../app';
-import { selectCurrentBucket } from '../../stores/files.reducer';
+import { useParams } from 'react-router-dom';
+import { RotateCcw } from 'lucide-react';
+import { RenameFileDialogue } from '../dialogues/rename.file.dialogue';
+import { CopyFileDialogue } from '../dialogues/copy.file.dialogue';
+import { DeleteFileConfirmation } from '../dialogues/delete.file.confirmation';
+import { copyFile, deleteFile, renameFile } from '../../api';
+import { AppErrorCode, getToastErrorMessage } from '../../../app';
+import { getFileExtension } from '../../utils';
 
 interface FileDataTableProps {
   columns: ColumnDef<DataTableFile>[];
   data: DataTableFile[];
+  reload: (ingoreCache?: boolean) => Promise<void>;
+  loading: boolean;
 }
 
-export function FileDataTable({ columns, data }: FileDataTableProps) {
-  const awsAccount = useAppSelector(selectCurrentAwsAccount);
-  const bucket = useAppSelector(selectCurrentBucket);
+export function FileDataTable({
+  columns,
+  data,
+  loading,
+  reload,
+}: FileDataTableProps) {
+  const { accountId, bucketId } = useParams();
   const [rowSelection, setRowSelection] = useState({});
   const [key, setKey] = useState('');
   const [globalFilter, setGlobalFilter] = useState('');
-  const [disableDL, setDisableDL] = useState(true);
+  const [allowedActions, setAllowedActions] = useState<FileAction[]>([]);
+  const [openDeleteDialogue, setOpenDeleteDialogue] = useState(false);
+  const [openCopyDialogue, setOpenCopyDialoguee] = useState(false);
+  const [openRenameDialogue, setOpenRenameDialogue] = useState(false);
 
   useEffect(() => {
     const bouncer = setTimeout(() => {
@@ -70,19 +84,23 @@ export function FileDataTable({ columns, data }: FileDataTableProps) {
   useEffect(() => {
     const selected = table.getFilteredSelectedRowModel().rows;
 
+    const newAllowedActions: FileAction[] = [];
+
     if (selected.length) {
-      if (selected.some((x) => x.original.kind == 'folder')) {
-        setDisableDL(true);
-      } else {
-        console.log('file selected');
-        setDisableDL(false);
+      if (!selected.some((x) => x.original.kind == 'folder')) {
+        if (selected.length == 1) {
+          const actions: FileAction[] = ['cp', 'dl', 'mv', 'rename', 'rm'];
+          newAllowedActions.push(...actions);
+        } else {
+          newAllowedActions.push('dl');
+        }
       }
-    } else {
-      setDisableDL(true);
     }
+
+    setAllowedActions(newAllowedActions);
   }, [rowSelection]);
 
-  const handleDownload = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  async function handleDownload(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     const toastId = toast.loading('Downloading...', {
       className: 'bg-background text-foreground',
@@ -93,17 +111,122 @@ export function FileDataTable({ columns, data }: FileDataTableProps) {
       .rows.map((x) => x.original);
     try {
       const { files } = calculateDownloadMetadata(selected);
-      await downloadFilesAsync(awsAccount, bucket, files);
-      toast.success('Done', { id: toastId });
+      await downloadFilesAsync(accountId!, bucketId!, files);
+      toast.success('Done', {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
     } catch (error) {
       console.log(error);
       if (error instanceof MaxDownloadSizeExceededError) {
-        toast.error("Download size exceeds maximum zip limit of 4GB");
+        toast.error('Download size exceeds maximum zip limit of 4GB', {
+          className: 'bg-background text-foreground',
+          id: toastId,
+        });
         return;
       }
-      toast.error('Failed to download, try again later.', { id: toastId });
+      toast.error('Failed to download, try again later.', {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
     }
-  };
+  }
+  async function handleCopy(original: DataTableFile, filename: string) {
+    console.log(`copy file ${original.name} with ${filename}`);
+    setOpenCopyDialoguee(false);
+    const toastId = toast.loading('Copying...', {
+      className: 'bg-background text-foreground',
+    });
+    try {
+      const result = await copyFile(accountId!, bucketId!, {
+        key: original.key,
+        name: original.name,
+        new_name: `${filename}.${getFileExtension(original.name) || ''}`,
+      });
+      if (result) {
+        toast.success(
+          'Success! , It may take some time for changes to reflect.',
+          { className: 'bg-background text-foreground', id: toastId }
+        );
+
+        handleDataReload();
+      }
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
+    }
+  }
+  async function handleDelete(file: DataTableFile) {
+    console.log(`delete file ${file.name}`);
+    setOpenDeleteDialogue(false);
+    const toastId = toast.loading('Deleting...');
+    try {
+      const result = await deleteFile(accountId!, bucketId!, file.key);
+      if (result) {
+        toast.success(
+          'Success! , It may take some time for changes to reflect.',
+          { className: 'bg-background text-foreground', id: toastId }
+        );
+
+        handleDataReload();
+      }
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
+    }
+  }
+  async function handleRename(original: DataTableFile, filename: string) {
+    console.log(`rename file ${original.name} with ${filename}`);
+    setOpenRenameDialogue(false);
+    const toastId = toast.loading('Renaming...', {
+      className: 'bg-background text-foreground',
+    });
+    try {
+      const result = await renameFile(accountId!, bucketId!, {
+        key: original.key,
+        name: original.name,
+        new_name: `${filename}.${getFileExtension(original.name) || ''}`,
+      });
+      if (result) {
+        toast.success(
+          'Success! , It may take some time for changes to reflect.',
+          { className: 'bg-background text-foreground', id: toastId }
+        );
+        handleDataReload();
+      }
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
+    }
+  }
+
+  function handleDataReload() {
+    reload(true);
+  }
+
+  function handleDeleteDialogue(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setOpenDeleteDialogue(true);
+  }
+
+  function handleRenameDialogue(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setOpenRenameDialogue(true);
+  }
+
+  function handleCopyDialogue(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setOpenCopyDialoguee(true);
+  }
 
   return (
     <>
@@ -118,13 +241,41 @@ export function FileDataTable({ columns, data }: FileDataTableProps) {
         </div>
         <div className="hidden md:flex md:gap-2">
           <Button
-            variant={'default'}
-            size={'sm'}
-            disabled={disableDL}
+            variant={'outline'}
+            onClick={handleCopyDialogue}
+            disabled={!allowedActions.includes('cp')}
+          >
+            Copy
+          </Button>
+          <Button
+            variant={'outline'}
+            onClick={handleRenameDialogue}
+            disabled={!allowedActions.includes('rename')}
+          >
+            Rename
+          </Button>
+          <Button
+            variant={'outline'}
+            onClick={handleDeleteDialogue}
+            disabled={!allowedActions.includes('rm')}
+          >
+            Delete
+          </Button>
+          <Button
+            variant={'outline'}
+            disabled={!allowedActions.includes('dl')}
             onClick={handleDownload}
           >
-            <Download className="h-5 w-5 mr-2" />
             Download
+          </Button>
+          <Button variant={'default'}>Upload</Button>
+          <Button
+            variant={'link'}
+            size={'icon'}
+            onClick={handleDataReload}
+            disabled={loading}
+          >
+            <RotateCcw className="h-5 w-5" />
           </Button>
         </div>
       </div>
@@ -178,6 +329,24 @@ export function FileDataTable({ columns, data }: FileDataTableProps) {
           </TableBody>
         </Table>
       </ScrollArea>
+      <RenameFileDialogue
+        open={openRenameDialogue}
+        onClose={setOpenRenameDialogue}
+        handleRename={handleRename}
+        file={table.getFilteredSelectedRowModel().rows[0]?.original}
+      />
+      <CopyFileDialogue
+        open={openCopyDialogue}
+        onClose={setOpenCopyDialoguee}
+        handleCopy={handleCopy}
+        file={table.getFilteredSelectedRowModel().rows[0]?.original}
+      />
+      <DeleteFileConfirmation
+        open={openDeleteDialogue}
+        onClose={setOpenDeleteDialogue}
+        handleDelete={handleDelete}
+        file={table.getFilteredSelectedRowModel().rows[0]?.original}
+      />
     </>
   );
 }

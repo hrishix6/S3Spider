@@ -1,15 +1,15 @@
-import { ProtectedRoute } from '../../../routes/protected.route';
-import { NoAccountsGuard } from '../routes/no.accounts.route.guard';
+import { ProtectedRoute } from '@/routes/protected.route';
 import { Layout } from '../../layout/components/layout';
 import { Files } from '../components/s3.files';
+import { AccountGuard } from '@/routes/account.guard';
 
 export function FilesPage() {
   return (
     <ProtectedRoute>
       <Layout>
-        <NoAccountsGuard>
+        <AccountGuard>
           <Files />
-        </NoAccountsGuard>
+        </AccountGuard>
       </Layout>
     </ProtectedRoute>
   );

@@ -1,20 +1,3 @@
-export type BreadCrumbTarget = "root" | "bucket" | "folder";
-
-export type DataTableType = "idle" | "buckets" | "files";
-
-export interface BreadCrumb {
-    key: string;
-    text: string;
-    target: BreadCrumbTarget
-}
-
-export const defaultBreadcrumbs: BreadCrumb[] = [
-    {
-        key: "root",
-        text: "Buckets",
-        target: "root"
-    }
-];
 export type S3ObjectKind = "folder" | "file"
 
 export type DataTableFile = {
@@ -27,17 +10,6 @@ export type DataTableFile = {
     lastModifiedAt?: string;
 }
 
-export type DataTableBucket = {
-    id: string;
-    name: string
-    createdAt?: string;
-}
-
-export interface Bucket {
-    name: string;
-    createdAt?: string;
-}
-
 export interface File {
     name: string;
     key: string;
@@ -45,17 +17,6 @@ export interface File {
     mimeType?: string;
     lastModifiedAt?: string;
     size: number;
-}
-
-export interface FilesState {
-    loading: boolean;
-    error: boolean;
-    breadCrumbs: BreadCrumb[];
-    currentBucket: string,
-    dataTable: DataTableType,
-    buckets: DataTableBucket[],
-    files: DataTableFile[],
-    errorMsg: string;
 }
 
 export const BYTE = 1;
@@ -84,4 +45,12 @@ export class MaxDownloadSizeExceededError extends Error {
         super(msg);
         this.name = MaxDownloadSizeExceededError.name;
     }
+}
+
+export type FileAction = "cp" | "mv" | "rm" | "rename" | "dl" | "ul";
+
+export interface FileRenameOrCopyPayload {
+    name: string
+    key: string
+    new_name: string
 }
