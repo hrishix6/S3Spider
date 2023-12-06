@@ -13,7 +13,7 @@ export function Navbar() {
   return (
     <nav className="flex items-center justify-between">
       <div className="flex items-center bg-background gap-1 py-1 lg:ml-2">
-        <img src="logo.svg" className="h-5 w-5" />
+        <img src="/logo.svg" className="h-5 w-5" />
         <h3 className="ml-1 text-primary font-semibold text-lg">
           <a
             href={APP_GITHUB_LINK}

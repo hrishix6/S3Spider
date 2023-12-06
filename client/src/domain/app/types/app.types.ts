@@ -37,12 +37,16 @@ export enum AppErrorCode {
     NO_ACCOUNT_ACCESS = 1001,
     OPERATION_NOT_ALLOWED = 1002,
     INVALID_ACCOUNT = 1003,
-    INVALID_BUCKET = 10004,
+    INVALID_BUCKET = 1004,
     INVALID_FOLDER = 1005,
     INVALID_FILE = 1006,
     S3_SERVICE_ERROR = 1007,
     BAD_PRESIGNED_REQ = 1008,
     BAD_DELETION_REQ = 1009,
+    BAD_RENAME_REQ = 1010,
+    BAD_COPY_REQ = 1011,
+    RENAME_FAILED = 1012,
+    COPY_FAILED = 1013,
 
     //AUTH
     TOKEN_EXPIRED = 2000,
@@ -50,7 +54,6 @@ export enum AppErrorCode {
     BAD_SIGNUP = 2003,
     PENDING_VERIFICATION = 2002,
     FORBIDDEN_OPERATION = 2004,
-
 
     //USER
     BAD_USERID = 3000,
@@ -86,7 +89,14 @@ export function getToastErrorMessage(errorCode: AppErrorCode): string {
         case AppErrorCode.BAD_PRESIGNED_REQ:
             errorMsg = "S3 service returned an error"
             break;
-
+        case AppErrorCode.BAD_COPY_REQ:
+        case AppErrorCode.COPY_FAILED:
+            errorMsg = "Couldn't copy file"
+            break;
+        case AppErrorCode.BAD_RENAME_REQ:
+        case AppErrorCode.RENAME_FAILED:
+            errorMsg = "Couldn't rename the file"
+            break;
         case AppErrorCode.TOKEN_EXPIRED:
             errorMsg = "Your session has expired, please login"
             break;
