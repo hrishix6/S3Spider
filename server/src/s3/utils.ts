@@ -38,3 +38,7 @@ export function toFileFromPrefix(childFolder: CommonPrefix, parentPrefix: string
     }
 }
 
+export function getDirectory(path: string) {
+    const tokens = path.split("/");
+    return tokens.slice(0, tokens.length - 1).join("/")
+}

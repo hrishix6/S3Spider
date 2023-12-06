@@ -6,6 +6,8 @@ export const RequiredKeySchema = z.string().min(1);
 
 export const BucketParseSchema = z.string().min(1);
 
+export const IngoreCacheKeySchema = z.coerce.number();
+
 export const AwsAccountSchema = z.object({
     id: z.string().min(1, { message: "aws id cannot be empty" }),
     client_id: z.string().min(1, { message: "client_id cannot be empty" }),
@@ -64,3 +66,9 @@ export const GetSignedUrlsForDLRequest = z.object({
 export interface FileDownloadMetadataWithUrl extends FileDownloadMetadata {
     url: string;
 }
+
+export const FileRenameOrCopyRequest = z.object({
+    name: z.string().min(1),
+    key: z.string().min(1),
+    new_name: z.string().min(1)
+}).refine(obj => obj.name !== obj.new_name, { message: "new name cannot be same as current name" });
