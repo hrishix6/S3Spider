@@ -5,7 +5,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { APP_NAME } from '@/lib/constants';
 import { useAppDispatch, useAppSelector } from '@/hooks';
-import { AppErrorCode, getToastErrorMessage, loginSuccess, selectIsAuthenticated } from '../../app';
+import {
+  AppErrorCode,
+  getToastErrorMessage,
+  loginSuccess,
+  selectIsAuthenticated,
+} from '../../app';
 import { Link, Navigate } from 'react-router-dom';
 import { attemptLogin } from '../api';
 import toast from 'react-hot-toast';
@@ -28,27 +33,24 @@ export function LoginPage() {
     try {
       const result = await attemptLogin({ username, password: pass });
       const { data, success } = result;
-      if(!success)
-      {
-        toast.error("Something wen't wrong, try again later",{className: "bg-background text-foreground"});
+      if (!success) {
+        toast.error("Something wen't wrong, try again later", {
+          className: 'bg-background text-foreground',
+        });
         return;
       }
 
       const { access_token, ...rest } = data;
       localStorage.setItem('token', access_token);
       dispatch(loginSuccess(rest));
-    } catch (error){
-
-      const code  = error as AppErrorCode;
+    } catch (error) {
+      const code = error as AppErrorCode;
       const toastMsg = getToastErrorMessage(code);
 
-      toast.error(toastMsg,{className: "bg-background text-foreground"});
-
-    }
-    finally {
+      toast.error(toastMsg, { className: 'bg-background text-foreground' });
+    } finally {
       setLoading(false);
     }
-    
   }
 
   return (
@@ -60,8 +62,10 @@ export function LoginPage() {
         >
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-1">
-              <img src="logo.svg" className="h-6 w-6" />
-              <h1 className="text-xl text-center text-primary">{APP_NAME}</h1>
+              <img src="/logo.svg" className="h-6 w-6" />
+              <h1 className="text-xl text-center text-primary font-semibold">
+                {APP_NAME}
+              </h1>
             </div>
             <p className="text-base text-muted-foreground">Login to continue</p>
           </div>

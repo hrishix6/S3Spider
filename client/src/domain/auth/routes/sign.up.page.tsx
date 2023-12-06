@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { APP_NAME } from '@/lib/constants';
 import { useAppSelector } from '@/hooks';
-import { AppErrorCode, getToastErrorMessage, selectIsAuthenticated } from '../../app';
+import {
+  AppErrorCode,
+  getToastErrorMessage,
+  selectIsAuthenticated,
+} from '../../app';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { attemptSignUp } from '../api';
 import toast from 'react-hot-toast';
@@ -28,20 +32,21 @@ export function SignUpPage() {
     setLoading(true);
     try {
       const result = await attemptSignUp({ username, password: pass });
-      if(result.success)
-      {
-        toast.error("Something went wrong.",{className: "bg-background text-foreground"});
+      if (result.success) {
+        toast.error('Something went wrong.', {
+          className: 'bg-background text-foreground',
+        });
         return;
       }
       navigate('/login', { replace: true });
     } catch (error) {
-      const code  = error as AppErrorCode;
+      const code = error as AppErrorCode;
       const toastMsg = getToastErrorMessage(code);
 
-      toast.error(toastMsg,{className: "bg-background text-foreground"});
-    }finally{
+      toast.error(toastMsg, { className: 'bg-background text-foreground' });
+    } finally {
       setLoading(false);
-    }    
+    }
   }
 
   return (
@@ -53,7 +58,7 @@ export function SignUpPage() {
         >
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-1">
-              <img src="logo.svg" className="h-6 w-6" />
+              <img src="/logo.svg" className="h-6 w-6" />
               <h1 className="text-xl text-center text-primary">{APP_NAME}</h1>
             </div>
             <p className="text-base text-muted-foreground">create an account</p>
