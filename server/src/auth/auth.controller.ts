@@ -2,13 +2,13 @@ import { BaseController } from "../app/base.controller";
 import { Router, RequestHandler } from "express";
 import AsyncHandler from "express-async-handler";
 import { LoginRequestSchema, RegisterRequestSchema } from "./types";
-import { formatZodErrors } from "../app/utils";
 import { Service } from "typedi";
 import { UserRepository } from "../database/user.repository";
 import { PasswordService } from "./password.service";
 import { ConfigService } from "../config/config.service";
 import { JwtService } from "./jwt.service";
 import { Account } from "../database/custom.types";
+import { AppErrorCode } from "../app/types";
 
 @Service()
 export class AuthController extends BaseController {
@@ -29,7 +29,7 @@ export class AuthController extends BaseController {
         const result = await LoginRequestSchema.safeParseAsync(body);
 
         if (!result.success) {
-            return this.badRequest(res, formatZodErrors(result.error));
+            return this.badRequest(res, AppErrorCode.BAD_CREDENTIALS);
         }
 
         const { username, password } = result.data;
@@ -37,18 +37,19 @@ export class AuthController extends BaseController {
         const user = await this.userRepository.findByUsernameOrmail(username);
 
         if (!user) {
-            return this.unauthorized(res, 'invalid credentials');
-        }
-
-        if (!user.verified) {
-            return this.forbidden(res, 'user is unverified');
+            return this.unauthorized(res, AppErrorCode.BAD_CREDENTIALS);
         }
 
         const pwMatch = await this.pwService.compare(password, user.password);
 
         if (!pwMatch) {
-            return this.unauthorized(res, 'invalid credentials');
+            return this.unauthorized(res, AppErrorCode.BAD_CREDENTIALS);
         }
+
+        if (!user.verified) {
+            return this.forbidden(res, AppErrorCode.PENDING_VERIFICATION);
+        }
+
 
         let accounts: Account[] = [];
 
@@ -81,7 +82,7 @@ export class AuthController extends BaseController {
         const result = await RegisterRequestSchema.safeParseAsync(body);
 
         if (!result.success) {
-            return this.badRequest(res, formatZodErrors(result.error));
+            return this.badRequest(res, AppErrorCode.BAD_SIGNUP);
         }
 
         const { password, email } = result.data;
@@ -97,7 +98,7 @@ export class AuthController extends BaseController {
             return this.created(res, "Sign up success");
         }
 
-        return this.serverError(res);
+        return this.serverError(res, AppErrorCode.SERVER_FAILURE);
     }
 
     routes() {

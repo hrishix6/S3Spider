@@ -1,29 +1,26 @@
-import { getClient } from "@/lib/http.client";
-import { UpdateUserAccountsRequest, UpdateUsersRequest } from "../types/admin.types";
+import { getClient, handleAxiosError } from "@/lib/http.client";
+import { DataTableAccount, DataTableUser, UpdateUserAccountsRequest, UpdateUsersRequest } from "../types/admin.types";
+import { ApiResult } from "../../app";
 
-export async function getUserAccounts(id: number) {
+export async function getUserAccounts(id: string) {
     try {
         const client = getClient();
-        const result = await client.get(`user/${id}/accounts`);
-        const response = result.data;
-        if (response.success) {
-            return response.data;
-        }
+        const response = await client.get(`user/${id}/accounts`);
+        const result = response.data as ApiResult<DataTableAccount[]>;
+        return result;
     } catch (error) {
-        return null;
+        throw handleAxiosError(error);
     }
 }
 
 export async function getUsers() {
     try {
         const client = getClient();
-        const result = await client.get(`user`);
-        const response = result.data;
-        if (response.success) {
-            return response.data;
-        }
+        const response = await client.get(`user`);
+        const result = response.data as ApiResult<DataTableUser[]>;
+        return result;
     } catch (error) {
-        return null;
+        throw handleAxiosError(error);
     }
 }
 
@@ -33,8 +30,7 @@ export async function updateUsers(body: UpdateUsersRequest) {
         await client.put("user", body);
         return true;
     } catch (error) {
-        console.log(error);
-        return false;
+        throw handleAxiosError(error);
     }
 }
 
@@ -45,7 +41,6 @@ export async function updateUserAccounts(body: UpdateUserAccountsRequest) {
         await client.put(`user/${userId}/accounts`, { accounts });
         return true;
     } catch (error) {
-        console.log(error);
-        return false;
+        throw handleAxiosError(error);
     }
 }

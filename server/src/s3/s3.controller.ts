@@ -3,14 +3,16 @@ import { BaseController } from "../app/base.controller";
 import { RequestHandler, Router } from "express";
 import AsyncHandler from "express-async-handler";
 import { S3Service } from ".";
-import { BucketParseSchema, PrefixParseSchema, RequiredKeySchema, DeleteFilesRequest } from "./types";
-import { formatZodErrors } from "../app/utils";
+import { BucketParseSchema, PrefixParseSchema, RequiredKeySchema, DeleteFilesRequest, GetSignedUrlsForDLRequest, FileRenameOrCopyRequest, IngoreCacheKeySchema } from "./types";
 import { AppMiddleware } from "../app/middlewares";
+import { AppErrorCode } from "../app/types";
+import { S3CacheProxy } from "./s3.cache.service";
 
 @Service()
 export class S3Controller extends BaseController {
 
     constructor(
+        private readonly s3CacheProxy: S3CacheProxy,
         private readonly s3Service: S3Service,
         private readonly middlewares: AppMiddleware
     ) {
@@ -19,11 +21,15 @@ export class S3Controller extends BaseController {
 
     getBuckets: RequestHandler = async (req, res) => {
         const { accountId } = req.params;
+        const { nocache } = req.query;
+        const ingoreCacheParse = await IngoreCacheKeySchema.safeParseAsync(nocache);
 
-        const result = await this.s3Service.listBuckets(accountId);
+        const shouldIngoreCache = ingoreCacheParse.success;
+
+        const result = await this.s3CacheProxy.listBuckets(accountId, shouldIngoreCache);
 
         if (!result.success) {
-            return this.serverError(res);
+            return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
         }
 
         return this.ok(res, result.data);
@@ -33,78 +39,85 @@ export class S3Controller extends BaseController {
     getChildren: RequestHandler = async (req, res) => {
 
         const { accountId } = req.params;
-        const { key, bucket } = req.query;
+        const { key, bucket, nocache } = req.query;
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
+        const ingoreCacheParse = await IngoreCacheKeySchema.safeParseAsync(nocache);
 
         if (!bucketParse.success) {
-            return this.badRequest(res, "invalid bucket");
+            return this.badRequest(res, AppErrorCode.INVALID_BUCKET);
         }
 
         const prefixParse = await PrefixParseSchema.safeParseAsync(key);
 
         if (!prefixParse.success) {
-            return this.badRequest(res, "invalid prefix");
+            return this.badRequest(res, AppErrorCode.INVALID_FOLDER);
         }
 
-        const result = await this.s3Service.listDirectChildren(accountId, bucketParse.data, prefixParse.data || "");
+        const shouldIngoreCache = ingoreCacheParse.success;
 
+        const result = await this.s3CacheProxy.listDirectChildren(accountId, bucketParse.data, prefixParse.data || "", shouldIngoreCache);
         if (!result.success) {
-            return this.serverError(res);
+            return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
         }
 
         return this.ok(res, result.data);
     }
 
-    getPresignedUrlForDL: RequestHandler = async (req, res) => {
+    getPresignedUrlsForUL: RequestHandler = async (req, res) => {
         const { accountId } = req.params;
         const { key, bucket } = req.query;
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
 
         if (!bucketParse.success) {
-            return this.badRequest(res, "invalid bucket");
+            return this.badRequest(res, AppErrorCode.INVALID_BUCKET);
         }
 
         const keyParse = await RequiredKeySchema.safeParseAsync(key);
 
         if (!keyParse.success) {
-            return this.badRequest(res, "invalid key");
+            return this.badRequest(res, AppErrorCode.INVALID_FILE);
         }
 
         const result = await this.s3Service.getSignedUrlForDL(accountId, bucketParse.data, keyParse.data)
 
         if (!result.success) {
-            return this.serverError(res);
+            return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
         }
 
         return this.ok(res, { url: result.data });
-
     }
 
-    getPresignedUrlForUL: RequestHandler = async (req, res) => {
+    getPresignedUrlsForDL: RequestHandler = async (req, res) => {
         const { accountId } = req.params;
-        const { key, bucket } = req.query;
+        const { bucket } = req.query;
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
 
         if (!bucketParse.success) {
-            return this.badRequest(res, "invalid bucket");
+            return this.badRequest(res, AppErrorCode.INVALID_BUCKET);
         }
 
-        const keyParse = await RequiredKeySchema.safeParseAsync(key);
+        const bodyParse = await GetSignedUrlsForDLRequest.safeParseAsync(req.body);
 
-        if (!keyParse.success) {
-            return this.badRequest(res, "invalid key");
+        if (!bodyParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_PRESIGNED_REQ);
         }
 
-        const result = await this.s3Service.getSignedUrlForUL(accountId, bucketParse.data, keyParse.data)
+        const { files } = bodyParse.data;
 
-        if (!result.success) {
-            return this.serverError(res);
-        }
+        const signedUrlRequests = files.map(x => this.s3Service.getSignedUrlForDL(accountId, bucketParse.data, x.key));
 
-        return this.ok(res, { url: result.data });
+        const results = await Promise.all(signedUrlRequests);
+
+        const data = results.map((x, i) => ({
+            ...files[i],
+            url: x.data
+        }));
+
+        return this.ok(res, data);
+
     }
 
     deleteFiles: RequestHandler = async (req, res) => {
@@ -116,7 +129,7 @@ export class S3Controller extends BaseController {
         const bodyParse = await DeleteFilesRequest.safeParseAsync(body);
 
         if (!bodyParse.success) {
-            return this.badRequest(res, formatZodErrors(bodyParse.error));
+            return this.badRequest(res, AppErrorCode.BAD_DELETION_REQ);
         }
 
         const { bucket, keys } = bodyParse.data;
@@ -124,11 +137,72 @@ export class S3Controller extends BaseController {
         const result = await this.s3Service.deleteObjects(accountId, bucket, keys);
 
         if (!result.success) {
-            return this.serverError(res);
+            return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
         }
 
         return this.ok(res, { deleted: result.data });
+    }
 
+    renameFile: RequestHandler = async (req, res) => {
+
+        const { accountId } = req.params;
+
+        const { body } = req;
+
+        const { bucket } = req.query;
+
+        const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
+
+        if (!bucketParse.success) {
+            return this.badRequest(res, AppErrorCode.INVALID_BUCKET);
+        }
+
+        const bodyParse = await FileRenameOrCopyRequest.safeParseAsync(body);
+
+        if (!bodyParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_RENAME_REQ);
+        }
+
+        const { new_name, key } = bodyParse.data;
+
+        const result = await this.s3Service.renameObject(accountId, bucketParse.data, key, new_name);
+
+        if (!result.success) {
+            return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
+        }
+
+        return this.noContent(res);
+
+    }
+
+    copyFile: RequestHandler = async (req, res) => {
+        const { accountId } = req.params;
+
+        const { body } = req;
+
+        const { bucket } = req.query;
+
+        const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
+
+        if (!bucketParse.success) {
+            return this.badRequest(res, AppErrorCode.INVALID_BUCKET);
+        }
+
+        const bodyParse = await FileRenameOrCopyRequest.safeParseAsync(body);
+
+        if (!bodyParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_COPY_REQ);
+        }
+
+        const { new_name, key } = bodyParse.data;
+
+        const result = await this.s3Service.copyObject(accountId, bucketParse.data, key, new_name);
+
+        if (!result.success) {
+            return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
+        }
+
+        return this.noContent(res);
     }
 
     routes() {
@@ -141,14 +215,17 @@ export class S3Controller extends BaseController {
             .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getBuckets.bind(this)))
 
         router.route("/:accountId/files")
-            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getChildren.bind(this)))
-            .post(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.deleteFiles.bind(this)));
+            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getChildren.bind(this)))//get
+            .put(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.renameFile.bind(this))) //rename
+            .post(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.copyFile.bind(this)));//copy
+
+        router.post("/:accountId/files/rm", this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.deleteFiles.bind(this)));
 
         router.route("/:accountId/files/dl")
-            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getPresignedUrlForDL.bind(this)));
+            .post(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getPresignedUrlsForDL.bind(this))); //download
 
-        router.route("/:accountId/files/ul")
-            .get(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getPresignedUrlForUL.bind(this)));
+        // router.route("/:accountId/files/ul")
+        //     .post(this.middlewares.awsAccountGuard.bind(this.middlewares), AsyncHandler(this.getPresignedUrlsForUL.bind(this)));
 
 
         return router;

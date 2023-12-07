@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { App } from './domain/app';
 import { Provider } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import './index.css';
 import { ThemeWrapper } from './domain/theme';
@@ -13,6 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ThemeWrapper>
       <BrowserRouter>
         <App />
+        <Toaster />
       </BrowserRouter>
     </ThemeWrapper>
   </Provider>

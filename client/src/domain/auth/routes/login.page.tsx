@@ -5,46 +5,55 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { APP_NAME } from '@/lib/constants';
 import { useAppDispatch, useAppSelector } from '@/hooks';
-import { loginSuccess, selectIsAuthenticated } from '../../app';
-import { Link, Navigate } from 'react-router-dom';
+import {
+  AppErrorCode,
+  getToastErrorMessage,
+  loginSuccess,
+  selectIsAuthenticated,
+} from '../../app';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { attemptLogin } from '../api';
+import toast from 'react-hot-toast';
 
 export function LoginPage() {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [showPass, setShowPass] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const [username, setUsername] = useState<string>('');
   const [pass, setPass] = useState<string>('');
-  const [error, setError] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { search } = useLocation();
+
+  const q = new URLSearchParams(search);
 
   if (isAuthenticated) {
-    return <Navigate to={'/'} replace />;
+    return <Navigate to={q.get('redirect') || '/'} replace />;
   }
 
   async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    const result = await attemptLogin({ username, password: pass });
-    setLoading(false);
-    const { data, success, statusCode } = result;
-
-    if (!success) {
-      setError(true);
-      if (statusCode == 401) {
-        setErrorMsg('Invalid credentials');
-      } else if (statusCode == 403) {
-        setErrorMsg('Your account is pending verification');
-      } else {
-        setErrorMsg("Couldn't log in");
+    try {
+      const result = await attemptLogin({ username, password: pass });
+      const { data, success } = result;
+      if (!success) {
+        toast.error("Something wen't wrong, try again later", {
+          className: 'bg-background text-foreground',
+        });
+        return;
       }
-      return;
-    }
 
-    const { access_token, ...rest } = data;
-    localStorage.setItem('token', access_token);
-    dispatch(loginSuccess(rest));
+      const { access_token, ...rest } = data;
+      localStorage.setItem('token', access_token);
+      dispatch(loginSuccess(rest));
+    } catch (error) {
+      const code = error as AppErrorCode;
+      const toastMsg = getToastErrorMessage(code);
+
+      toast.error(toastMsg, { className: 'bg-background text-foreground' });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -56,16 +65,13 @@ export function LoginPage() {
         >
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-1">
-              <img src="logo.svg" className="h-6 w-6" />
-              <h1 className="text-xl text-center text-primary">{APP_NAME}</h1>
+              <img src="/logo.svg" className="h-6 w-6" />
+              <h1 className="text-xl text-center text-primary font-semibold">
+                {APP_NAME}
+              </h1>
             </div>
             <p className="text-base text-muted-foreground">Login to continue</p>
           </div>
-          {error && (
-            <div className="p-2 text-center text-destructive rounded border border-red-500">
-              <p className="text-sm">{errorMsg}</p>
-            </div>
-          )}
           <div className="flex flex-col gap-3">
             <Label htmlFor="username">Username</Label>
             <Input
@@ -74,7 +80,6 @@ export function LoginPage() {
               required
               autoComplete="username"
               onChange={(e) => {
-                setError(false);
                 setUsername(e.target.value);
               }}
             />
@@ -89,7 +94,6 @@ export function LoginPage() {
                 autoComplete="password"
                 value={pass}
                 onChange={(e) => {
-                  setError(false);
                   setPass(e.target.value);
                 }}
               />

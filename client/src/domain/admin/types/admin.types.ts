@@ -1,23 +1,4 @@
 import { UserRole } from "../../app";
-
-export type AdminBreadCrumbTarget = "users" | "accounts";
-
-export type AdminDataTableType = "idle" | "users" | "accounts";
-
-export interface AdminBreadCrumb {
-    key: string;
-    text: string;
-    target: AdminBreadCrumbTarget
-}
-
-export const defaultAdminBreadcrumbs: AdminBreadCrumb[] = [
-    {
-        key: "root",
-        text: "Users",
-        target: "users"
-    }
-];
-
 export interface DataTableUser {
     id: number;
     email: string;
@@ -34,12 +15,7 @@ export interface DataTableAccount {
 }
 
 export interface AdminState {
-    loading: boolean;
-    currentUser: number | null;
-    error: boolean;
-    breadCrumbs: AdminBreadCrumb[]
     users: DataTableUser[],
-    dataTable: AdminDataTableType
     awsAccounts: DataTableAccount[]
 }
 
@@ -54,6 +30,6 @@ export interface UpdateUsersRequest {
 }
 
 export interface UpdateUserAccountsRequest {
-    userId: number;
+    userId: string;
     accounts: DataTableAccount[]
 }

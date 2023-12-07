@@ -1,6 +1,6 @@
 import { ErrorRequestHandler, RequestHandler } from "express";
 import { BaseController } from "./base.controller";
-import { IdParseSchema, awsAccountIdSchema } from "./types";
+import { AppErrorCode, IdParseSchema, awsAccountIdSchema } from "./types";
 import { Service } from "typedi";
 import { ConfigService } from "../config/config.service";
 import { JwtService } from "../auth/jwt.service";
@@ -19,12 +19,12 @@ export class AppMiddleware extends BaseController {
 
     onGlobalError: ErrorRequestHandler = (err, req, res) => {
         console.error(err);
-        return this.serverError(res);
+        return this.serverError(res, AppErrorCode.SERVER_FAILURE);
     }
 
     onNotFound: RequestHandler = (req, res,) => {
 
-        return this.notFound(res, `path ${req.method}@${req.originalUrl} not found`);
+        return this.notFound(res, AppErrorCode.SERVER_UNSUPPORTED_OPERATION);
 
     }
 
@@ -79,7 +79,7 @@ export class AppMiddleware extends BaseController {
     includeUser: RequestHandler = async (req, res, next) => {
 
         if (!req.headers["x-user-id"]) {
-            return this.forbidden(res, "need to login to view this resource");
+            return this.unauthorized(res, AppErrorCode.TOKEN_EXPIRED);
         }
 
         const userId = req.headers["x-user-id"];
@@ -87,13 +87,13 @@ export class AppMiddleware extends BaseController {
         const parseUserId = await IdParseSchema.safeParseAsync(userId);
 
         if (!parseUserId.success) {
-            return this.forbidden(res, `invalid credentials`);
+            return this.unauthorized(res, AppErrorCode.BAD_USERID);
         }
 
         const user = await this.userRepository.findById(parseUserId.data);
 
         if (!user) {
-            return this.forbidden(res, `invalid credentials`);
+            return this.unauthorized(res, AppErrorCode.BAD_CREDENTIALS);
         }
 
         req.user = user;
@@ -114,15 +114,14 @@ export class AppMiddleware extends BaseController {
         const accountIdParse = await awsAccountIdSchema.safeParseAsync(accountId);
 
         if (!accountIdParse.success) {
-            return this.badRequest(res, "invalid account id");
+            return this.badRequest(res, AppErrorCode.INVALID_ACCOUNT);
         }
 
         const hasAccessToAccount = await this.userRepository.hasAccesstoAccount(user.id, accountIdParse.data);
 
         if (!hasAccessToAccount) {
-            return this.forbidden(res, "you don't have access to this account");
+            return this.forbidden(res, AppErrorCode.NO_ACCOUNT_ACCESS);
         }
-
 
         next();
 

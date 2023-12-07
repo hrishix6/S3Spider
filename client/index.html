@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
@@ -8,6 +8,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script src="ponyfill.min.js"></script>
+    <script src="stream.saver.min.js"></script>
+    <script src="zip-stream.js"></script>
+    <script>
+      const streamSaver = window.streamSaver;
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

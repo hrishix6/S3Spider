@@ -5,8 +5,7 @@ import { AppMiddleware } from "../app/middlewares";
 import { Service } from "typedi";
 import { UserRepository } from "../database/user.repository";
 import { UpdateUserAccountsRequest, UpdateUsersRequest } from "../auth/types";
-import { formatZodErrors } from "../app/utils";
-import { IdParseSchema } from "../app/types";
+import { AppErrorCode, IdParseSchema } from "../app/types";
 
 @Service()
 export class UserController extends BaseController {
@@ -22,7 +21,7 @@ export class UserController extends BaseController {
         const user = req.user!;
 
         if (user.role !== "admin") {
-            return this.forbidden(res, 'only admins are allowed');
+            return this.forbidden(res, AppErrorCode.FORBIDDEN_OPERATION);
         }
 
         const allUsers = await this.userRepository.getAllUsers();
@@ -34,7 +33,7 @@ export class UserController extends BaseController {
         const user = req.user!;
 
         if (user.role !== "admin") {
-            return this.forbidden(res, 'only admins are allowed');
+            return this.forbidden(res, AppErrorCode.FORBIDDEN_OPERATION);
         }
 
         const { userId } = req.params;
@@ -42,7 +41,7 @@ export class UserController extends BaseController {
         const userIdParsed = await IdParseSchema.safeParseAsync(userId);
 
         if (!userIdParsed.success) {
-            return this.badRequest(res, "invalid user id");
+            return this.badRequest(res, AppErrorCode.BAD_USERID);
         }
 
         const allAwsAccounts = await this.userRepository.getAllAwsAccounts();
@@ -58,7 +57,7 @@ export class UserController extends BaseController {
         const user = req.user!;
 
         if (user.role !== "admin") {
-            return this.forbidden(res, 'only admins are allowed');
+            return this.forbidden(res, AppErrorCode.FORBIDDEN_OPERATION);
         }
 
         const { body } = req;
@@ -66,7 +65,7 @@ export class UserController extends BaseController {
         const parsedPayload = await UpdateUsersRequest.safeParseAsync(body);
 
         if (!parsedPayload.success) {
-            return this.badRequest(res, formatZodErrors(parsedPayload.error));
+            return this.badRequest(res, AppErrorCode.BAD_USER_UPDATE_OPERATION);
         }
 
         const { payload } = parsedPayload.data;
@@ -85,7 +84,7 @@ export class UserController extends BaseController {
         const user = req.user!;
 
         if (user.role !== "admin") {
-            return this.forbidden(res, 'only admins are allowed');
+            return this.forbidden(res, AppErrorCode.FORBIDDEN_OPERATION);
         }
 
         const { userId } = req.params;
@@ -93,7 +92,7 @@ export class UserController extends BaseController {
         const userIdParsed = await IdParseSchema.safeParseAsync(userId);
 
         if (!userIdParsed.success) {
-            return this.badRequest(res, "invalid user id");
+            return this.badRequest(res, AppErrorCode.BAD_USERID);
         }
 
         const { body } = req;
@@ -101,7 +100,7 @@ export class UserController extends BaseController {
         const parsedPayload = await UpdateUserAccountsRequest.safeParseAsync(body);
 
         if (!parsedPayload.success) {
-            return this.badRequest(res, formatZodErrors(parsedPayload.error));
+            return this.badRequest(res, AppErrorCode.BAD_USER_ACCOUNTS_UPDATE);
         }
 
         const { accounts } = parsedPayload.data;

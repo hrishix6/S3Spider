@@ -8,6 +8,8 @@ import { PasswordService } from "./auth/password.service";
 import { App } from "./app";
 import { InsertUser } from "./database/custom.types";
 import { initClients } from './s3';
+import { RedisClientOptions } from 'redis';
+import { CACHE_TOKEN, getCacheClient } from './cache/client';
 
 function listenAsync(server: http.Server, port: number) {
     return new Promise((resolve, reject) => {
@@ -47,6 +49,38 @@ async function main() {
     }
     const db = GetConnection(poolCfg);
     Container.set(DB_TOKEN, db);
+
+    const cacheEnabled = configService.get<boolean>("cache_enabled");
+
+    if (cacheEnabled) {
+        const cacheConfig: RedisClientOptions = {
+            username: configService.get("cache_user"),
+            password: configService.get("cache_pass"),
+            socket: {
+                host: configService.get("cache_host"),
+                port: configService.get<number>("cache_port"),
+            }
+        };
+
+        const cache = getCacheClient(cacheConfig);
+
+        try {
+            await cache
+                .on("error", (err) => console.error(`Redis client encountered error ${err}`))
+                .connect();
+
+            if (cache.isReady) {
+                console.log(`connected to redis server`);
+                Container.set(CACHE_TOKEN, cache);
+            }
+            else {
+                Container.set(CACHE_TOKEN, null);
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     try {
         const pwService = Container.get(PasswordService);

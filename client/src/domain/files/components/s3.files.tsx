@@ -1,53 +1,69 @@
-import { fileColumns, bucketColumns } from './file-data-table/colums';
-import { FileDataTable } from './file-data-table/data-table';
-import { FileBreadcrumbs } from './breadcrumbs/file.breadcrumbs';
-import { useAppDispatch, useAppSelector } from '@/hooks';
-import {
-  selectBuckets,
-  selectDatatableType,
-  selectFiles,
-  selectFilesLoading,
-} from '../stores/files.reducer';
+import { fileColumns } from './file-data-table/files.colums';
+import { FileDataTable } from './file-data-table/files.data-table';
 import { Spinner } from '@/components/ui/spinner';
-import { useEffect } from 'react';
-import { loadBucketsAsync } from '../stores/files.async.actions';
-import { selectCurrentAwsAccount } from '../../app';
+import { useEffect, useState } from 'react';
+import { AppErrorCode, getToastErrorMessage } from '../../app';
+import toast from 'react-hot-toast';
+import { useLocation, useParams } from 'react-router-dom';
+import { DataTableFile } from '../types/files.types';
+import { getChildren } from '../api';
+import { toDataTableFiles } from '../utils';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 export function Files() {
-  const dispatch = useAppDispatch();
-  const selectedAwsAccount = useAppSelector(selectCurrentAwsAccount);
-  const dataLoading = useAppSelector(selectFilesLoading);
-  const dataTableType = useAppSelector(selectDatatableType);
-  const files = useAppSelector(selectFiles);
-  const buckets = useAppSelector(selectBuckets);
+  const { accountId, bucketId } = useParams();
+  const location = useLocation();
+  const { search } = location;
+  const query = new URLSearchParams(search);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [files, setFiles] = useState<DataTableFile[]>([]);
+
+  const prefix = query.get('prefix');
+
+  async function loadData(ignoreCache?: boolean) {
+    setLoading(true);
+    try {
+      const result = await getChildren(
+        accountId!,
+        bucketId!,
+        prefix,
+        ignoreCache
+      );
+      if (!result.success) {
+        toast.error(`Coudn't load files.`, {
+          className: 'bg-background text-foreground',
+        });
+        return;
+      }
+      setFiles(toDataTableFiles(result.data));
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    if (selectedAwsAccount) {
-      dispatch(loadBucketsAsync());
-    }
-  }, [selectedAwsAccount]);
-
-  let tableComp;
-  switch (dataTableType) {
-    case 'idle':
-      tableComp = <></>;
-      break;
-    case 'files':
-      tableComp = <FileDataTable columns={fileColumns} data={files} />;
-      break;
-    case 'buckets':
-      tableComp = <FileDataTable columns={bucketColumns} data={buckets} />;
-      break;
-    default:
-      tableComp = <></>;
-      break;
-  }
+    loadData();
+  }, [prefix]);
 
   return (
     <section className="mt-4 flex flex-col flex-1 overflow-hidden gap-4">
-      <FileBreadcrumbs />
+      <Breadcrumbs />
       <div className="bg-background flex-1 flex flex-col overflow-hidden relative">
-        {dataLoading ? <Spinner /> : tableComp}
+        {loading ? (
+          <Spinner />
+        ) : (
+          <FileDataTable
+            loading={loading}
+            columns={fileColumns}
+            data={files}
+            reload={loadData}
+          />
+        )}
       </div>
     </section>
   );

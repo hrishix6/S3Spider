@@ -1,32 +1,18 @@
-import { getClient } from "@/lib/http.client";
-
-export async function getBuckets(accountId: string) {
-    try {
-        const client = getClient();
-        const response = await client.get(`s3/${accountId}/buckets`);
-
-        const { success, data } = response.data;
-
-        if (success) {
-            return data;
-        }
-
-        return null;
-    } catch (error) {
-        console.log(error);
-        return null;
-    }
-}
+import { getClient, handleAxiosError } from "@/lib/http.client";
+import { File, FileDownloadMetadata, FileDownloadMetadataWithUrl, FileRenameOrCopyPayload } from "../types/files.types";
+import { ApiResult } from "@/domain/app";
 
 export async function getChildren(
     accountId: string,
     bucketId: string,
-    prefix?: string
+    prefix: string | null,
+    ignoreCache = false
 ) {
     try {
-        const params: Record<string, string> = {
+        const params: Record<string, any> = {
             bucket: bucketId,
             key: prefix || '',
+            ...(ignoreCache ? { nocache: 1 } : {})
         };
 
         const q = new URLSearchParams(params).toString();
@@ -35,15 +21,92 @@ export async function getChildren(
             `s3/${accountId}/files${q ? `?${q}` : ''}`
         );
 
-        const { success, data } = response.data;
-
-        if (success) {
-            return data;
-        }
-
-        return null;
+        const result = response.data as ApiResult<File[]>;
+        return result;
     } catch (error) {
-        console.log(error);
-        return null;
+        throw handleAxiosError(error);
+    }
+}
+
+export async function getDownloadUrls(accountId: string,
+    bucketId: string,
+    files: FileDownloadMetadata[]) {
+
+    try {
+        const params: Record<string, string> = {
+            bucket: bucketId
+        };
+
+        const q = new URLSearchParams(params).toString();
+        const client = getClient();
+        const response = await client.post(
+            `s3/${accountId}/files/dl${q ? `?${q}` : ''}`, {
+            files
+        }
+        );
+
+        const result = response.data as ApiResult<FileDownloadMetadataWithUrl[]>;
+        return result;
+    } catch (error) {
+        throw handleAxiosError(error);
+    }
+
+}
+
+export async function renameFile(accountId: string,
+    bucketId: string,
+    payload: FileRenameOrCopyPayload
+) {
+    try {
+        const params: Record<string, string> = {
+            bucket: bucketId
+        };
+
+        const q = new URLSearchParams(params).toString();
+        const client = getClient();
+        await client.put(
+            `s3/${accountId}/files?${q}`, payload
+        );
+        return true;
+    } catch (error) {
+        throw handleAxiosError(error);
+    }
+}
+
+export async function copyFile(accountId: string,
+    bucketId: string,
+    payload: FileRenameOrCopyPayload
+) {
+    try {
+        const params: Record<string, string> = {
+            bucket: bucketId
+        };
+
+        const q = new URLSearchParams(params).toString();
+        const client = getClient();
+        await client.post(
+            `s3/${accountId}/files?${q}`, payload
+        );
+        return true;
+    } catch (error) {
+        throw handleAxiosError(error);
+    }
+}
+
+export async function deleteFile(accountId: string,
+    bucketId: string,
+    key: string
+) {
+    try {
+        const client = getClient();
+        await client.post(
+            `s3/${accountId}/files/rm`, {
+            bucket: bucketId,
+            keys: [key]
+        }
+        );
+        return true;
+    } catch (error) {
+        throw handleAxiosError(error);
     }
 }

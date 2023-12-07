@@ -5,9 +5,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { APP_NAME } from '@/lib/constants';
 import { useAppSelector } from '@/hooks';
-import { selectIsAuthenticated } from '../../app';
+import {
+  AppErrorCode,
+  getToastErrorMessage,
+  selectIsAuthenticated,
+} from '../../app';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { attemptSignUp } from '../api';
+import toast from 'react-hot-toast';
 
 export function SignUpPage() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -16,7 +21,6 @@ export function SignUpPage() {
   const [email, setEmail] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [pass, setPass] = useState<string>('');
-  const [error, setError] = useState<boolean>(false);
   const navigate = useNavigate();
 
   if (isAuthenticated) {
@@ -26,15 +30,23 @@ export function SignUpPage() {
   async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    const result = await attemptSignUp({ username, password: pass });
-    setLoading(false);
+    try {
+      const result = await attemptSignUp({ username, password: pass });
+      if (!result.success) {
+        toast.error('Something went wrong.', {
+          className: 'bg-background text-foreground',
+        });
+        return;
+      }
+      navigate('/login', { replace: true });
+    } catch (error) {
+      const code = error as AppErrorCode;
+      const toastMsg = getToastErrorMessage(code);
 
-    if (!result) {
-      setError(true);
-      return;
+      toast.error(toastMsg, { className: 'bg-background text-foreground' });
+    } finally {
+      setLoading(false);
     }
-
-    navigate('/login', { replace: true });
   }
 
   return (
@@ -46,16 +58,11 @@ export function SignUpPage() {
         >
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-1">
-              <img src="logo.svg" className="h-6 w-6" />
+              <img src="/logo.svg" className="h-6 w-6" />
               <h1 className="text-xl text-center text-primary">{APP_NAME}</h1>
             </div>
             <p className="text-base text-muted-foreground">create an account</p>
           </div>
-          {error && (
-            <div className="p-2 text-center text-destructive rounded border border-red-500">
-              <p className="text-sm">Couldn't sign up.</p>
-            </div>
-          )}
           <div className="flex flex-col gap-3">
             <Label htmlFor="email">Email</Label>
             <Input

@@ -4,18 +4,20 @@ import {
     GetObjectCommand,
     PutObjectCommand,
     DeleteObjectsCommand,
+    DeleteObjectCommand,
+    CopyObjectCommand,
     CreateBucketCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getClient } from "./clients";
 import { Disc, File } from "./types";
-import { toFileFromPrefix, toFilefromObj } from "./utils";
+import { getDirectory, toFileFromPrefix, toFilefromObj } from "./utils";
 import { Service } from "typedi";
+import { Readable } from "stream";
 
 
 @Service()
 export class S3Service {
-
     // #region basic-crud
     /**
      * Creates new bucket in s3.
@@ -58,7 +60,7 @@ export class S3Service {
         let success: boolean;
         let data: Disc[];
         let error: unknown;
-
+        const cached = false;
         try {
             const output = await client.send(new ListBucketsCommand({}));
             success = true;
@@ -71,7 +73,8 @@ export class S3Service {
         return {
             success,
             data,
-            error
+            error,
+            cached
         }
     }
 
@@ -87,7 +90,7 @@ export class S3Service {
         let success: boolean;
         let data: File[];
         let error: unknown;
-
+        const cached = false;
         const input = new ListObjectsV2Command({ Bucket: bucket, Delimiter: "/", Prefix: prefix });
 
         try {
@@ -124,7 +127,8 @@ export class S3Service {
         return {
             success,
             data,
-            error
+            error,
+            cached
         }
     }
 
@@ -155,6 +159,44 @@ export class S3Service {
 
         return { success, data, error }
 
+    }
+
+    /**
+     * Returns the file from s3 as readable stream
+     * @param acccountId Aws Account Id
+     * @param bucket Bucket name
+     * @param key file key
+     */
+    async getFileStream(acccountId: string, bucket: string, key: string) {
+        const client = getClient(acccountId);
+        let success: boolean;
+        let data: Readable | null;
+        let error: unknown;
+
+        try {
+            const input = new GetObjectCommand({ Bucket: bucket, Key: key });
+            const out = await client.send(input);
+
+            if (!out.Body) {
+                success = false;
+                data = null;
+                error = new Error("No body");
+            }
+            else {
+                success = true;
+                data = out.Body as Readable;
+                error = null;
+            }
+
+        } catch (e) {
+            success = false;
+            data = null;
+            error = e;
+        }
+
+        return {
+            success, data, error
+        }
     }
 
     /**
@@ -223,6 +265,119 @@ export class S3Service {
             error
         }
     }
+
+    /**
+     * First creates a copy of object with new name, then deletes original object.
+     * @param accountId aws account
+     * @param bucket bucket
+     * @param key key of object being renamed
+     * @param newName new name
+     */
+    async renameObject(accountId: string, bucket: string, key: string, newName: string) {
+
+        const client = getClient(accountId);
+        let success: boolean;
+        let error: unknown;
+
+        try {
+
+            const keyWithBucket = encodeURIComponent(`${bucket}/${key}`);
+
+            const sourceDir = getDirectory(key);
+
+            const newKey = sourceDir ? `${sourceDir}/${newName}` : newName;
+
+            const input = new CopyObjectCommand({
+                CopySource: keyWithBucket,
+                Bucket: bucket,
+                Key: newKey
+            });
+
+            const { CopyObjectResult } = await client.send(input);
+
+            if (!CopyObjectResult) {
+                success = false;
+                error = new Error("Couldn't rename object, copy failed.");
+            }
+            else {
+                console.log(`object copy created, now deleting old object..`);
+                const deletoldObjInput = new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                });
+
+                const { DeleteMarker } = await client.send(deletoldObjInput);
+
+                if (DeleteMarker) {
+                    console.log(`deleted old object..`);
+                }
+
+                success = true;
+                error = undefined;
+            }
+
+        } catch (e) {
+            console.log(e);
+            error = e;
+            success = false;
+        }
+
+        return {
+            success,
+            error
+        }
+    }
+
+    /**
+     * Creates a copy of an object in same folder.
+     * @param accountId aws account
+     * @param bucket bucket
+     * @param key key of object being copied
+     * @param newName name for copy
+     */
+    async copyObject(accountId: string, bucket: string, key: string, newName: string) {
+        const client = getClient(accountId);
+        let success: boolean;
+        let error: unknown;
+        try {
+
+            const keyWithBucket = encodeURIComponent(`${bucket}/${key}`);
+
+            const sourceDir = getDirectory(key);
+
+            const newKey = sourceDir ? `${sourceDir}/${newName}` : newName;
+
+            console.log(`new file key - ${newKey}`);
+
+            const input = new CopyObjectCommand({
+                CopySource: keyWithBucket,
+                Bucket: bucket,
+                Key: newKey
+            });
+
+            const { CopyObjectResult } = await client.send(input);
+
+            if (!CopyObjectResult) {
+                success = false;
+                error = new Error("Couldn't copy object");
+            }
+            else {
+                success = true;
+                error = undefined;
+            }
+
+        } catch (e) {
+            console.log(e);
+            error = e;
+            success = false;
+        }
+
+        return {
+            success,
+            error
+        }
+    }
+
     //#endregion basic-crud
 
     // #region dangerous-operations
