@@ -11,7 +11,7 @@ import {
   loginSuccess,
   selectIsAuthenticated,
 } from '../../app';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { attemptLogin } from '../api';
 import toast from 'react-hot-toast';
 
@@ -22,9 +22,12 @@ export function LoginPage() {
   const [username, setUsername] = useState<string>('');
   const [pass, setPass] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const { search } = useLocation();
+
+  const q = new URLSearchParams(search);
 
   if (isAuthenticated) {
-    return <Navigate to={'/'} replace />;
+    return <Navigate to={q.get('redirect') || '/'} replace />;
   }
 
   async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {

@@ -6,17 +6,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAppDispatch, useAppSelector } from '@/hooks';
-import {
-  selectCurrentAwsAccount,
-  selectUserAwsAccounts,
-  setCurrentAwsAccount,
-} from '../stores/app.reducer';
+import { useAppSelector } from '@/hooks';
+import { selectUserAwsAccounts } from '../stores/app.reducer';
+import { Link, useParams } from 'react-router-dom';
 
 export function AwsAccountsDropdown() {
-  const dispatch = useAppDispatch();
   const accounts = useAppSelector(selectUserAwsAccounts);
-  const selectedAccId = useAppSelector(selectCurrentAwsAccount);
+  const { accountId: selectedAccId } = useParams();
 
   const selectedAcc = accounts?.find((x) => x.aws_id == selectedAccId);
 
@@ -40,20 +36,16 @@ export function AwsAccountsDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {accounts?.map((x) => (
-          <DropdownMenuItem
-            key={x.aws_id}
-            className="hover:cursor-pointer"
-            onClick={() => {
-              dispatch(setCurrentAwsAccount(x.aws_id));
-            }}
-          >
-            {x.aws_id === selectedAccId ? (
-              <Check className="h-4 w-4 mr-2" />
-            ) : (
-              <Square className="h-4 w-4 mr-2 stroke-transparent" />
-            )}
-            <span>{x.name}</span>
-          </DropdownMenuItem>
+          <Link key={x.aws_id} to={`/s3/${x.aws_id}/buckets`}>
+            <DropdownMenuItem className="hover:cursor-pointer">
+              {x.aws_id === selectedAccId ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <Square className="h-4 w-4 mr-2 stroke-transparent" />
+              )}
+              <span>{x.name}</span>
+            </DropdownMenuItem>
+          </Link>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

@@ -28,13 +28,18 @@ import {
   downloadFilesAsync,
 } from '../../utils/download.utils';
 import { useParams } from 'react-router-dom';
-import { RotateCcw } from 'lucide-react';
+import { RotateCw } from 'lucide-react';
 import { RenameFileDialogue } from '../dialogues/rename.file.dialogue';
 import { CopyFileDialogue } from '../dialogues/copy.file.dialogue';
 import { DeleteFileConfirmation } from '../dialogues/delete.file.confirmation';
 import { copyFile, deleteFile, renameFile } from '../../api';
-import { AppErrorCode, getToastErrorMessage } from '../../../app';
+import {
+  AppErrorCode,
+  getToastErrorMessage,
+  selectUserRole,
+} from '../../../app';
 import { getFileExtension } from '../../utils';
+import { useAppSelector } from '@/hooks';
 
 interface FileDataTableProps {
   columns: ColumnDef<DataTableFile>[];
@@ -50,6 +55,7 @@ export function FileDataTable({
   reload,
 }: FileDataTableProps) {
   const { accountId, bucketId } = useParams();
+  const useRole = useAppSelector(selectUserRole);
   const [rowSelection, setRowSelection] = useState({});
   const [key, setKey] = useState('');
   const [globalFilter, setGlobalFilter] = useState('');
@@ -117,7 +123,6 @@ export function FileDataTable({
         id: toastId,
       });
     } catch (error) {
-      console.log(error);
       if (error instanceof MaxDownloadSizeExceededError) {
         toast.error('Download size exceeds maximum zip limit of 4GB', {
           className: 'bg-background text-foreground',
@@ -132,7 +137,6 @@ export function FileDataTable({
     }
   }
   async function handleCopy(original: DataTableFile, filename: string) {
-    console.log(`copy file ${original.name} with ${filename}`);
     setOpenCopyDialoguee(false);
     const toastId = toast.loading('Copying...', {
       className: 'bg-background text-foreground',
@@ -160,7 +164,6 @@ export function FileDataTable({
     }
   }
   async function handleDelete(file: DataTableFile) {
-    console.log(`delete file ${file.name}`);
     setOpenDeleteDialogue(false);
     const toastId = toast.loading('Deleting...');
     try {
@@ -182,7 +185,6 @@ export function FileDataTable({
     }
   }
   async function handleRename(original: DataTableFile, filename: string) {
-    console.log(`rename file ${original.name} with ${filename}`);
     setOpenRenameDialogue(false);
     const toastId = toast.loading('Renaming...', {
       className: 'bg-background text-foreground',
@@ -240,27 +242,31 @@ export function FileDataTable({
           />
         </div>
         <div className="hidden md:flex md:gap-2">
-          <Button
-            variant={'outline'}
-            onClick={handleCopyDialogue}
-            disabled={!allowedActions.includes('cp')}
-          >
-            Copy
-          </Button>
-          <Button
-            variant={'outline'}
-            onClick={handleRenameDialogue}
-            disabled={!allowedActions.includes('rename')}
-          >
-            Rename
-          </Button>
-          <Button
-            variant={'outline'}
-            onClick={handleDeleteDialogue}
-            disabled={!allowedActions.includes('rm')}
-          >
-            Delete
-          </Button>
+          {useRole !== 'viewer' && (
+            <>
+              <Button
+                variant={'outline'}
+                onClick={handleCopyDialogue}
+                disabled={!allowedActions.includes('cp')}
+              >
+                Copy
+              </Button>
+              <Button
+                variant={'outline'}
+                onClick={handleRenameDialogue}
+                disabled={!allowedActions.includes('rename')}
+              >
+                Rename
+              </Button>
+              <Button
+                variant={'outline'}
+                onClick={handleDeleteDialogue}
+                disabled={!allowedActions.includes('rm')}
+              >
+                Delete
+              </Button>
+            </>
+          )}
           <Button
             variant={'outline'}
             disabled={!allowedActions.includes('dl')}
@@ -275,7 +281,7 @@ export function FileDataTable({
             onClick={handleDataReload}
             disabled={loading}
           >
-            <RotateCcw className="h-5 w-5" />
+            <RotateCw className="h-5 w-5" />
           </Button>
         </div>
       </div>

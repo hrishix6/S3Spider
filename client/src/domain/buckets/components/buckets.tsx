@@ -39,7 +39,7 @@ export function Buckets() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [accountId]);
 
   return (
     <section className="mt-4 flex flex-col flex-1 overflow-hidden gap-4">

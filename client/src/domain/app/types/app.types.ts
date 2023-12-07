@@ -15,7 +15,6 @@ export interface UserInfo {
 }
 
 export interface AppState {
-    currentAccount: string;
     loading: boolean;
     error: boolean;
     mobileSidebar: boolean;
@@ -26,6 +25,7 @@ export interface AppState {
     noAccounts: boolean;
     userId: number;
     sessionEnded: boolean;
+    userName: string;
 }
 
 export enum AppErrorCode {

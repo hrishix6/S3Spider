@@ -15,7 +15,7 @@ export function UserVerifiedCell(row: Row<DataTableUser>) {
         onCheckedChange={(value) =>
           dispatch(setUserVerified({ id, verified: !!value }))
         }
-        aria-label="Select all"
+        aria-label="verified status"
       />
     </div>
   );

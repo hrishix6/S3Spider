@@ -13,7 +13,6 @@ export function AccountAssignedCell(row: Row<DataTableAccount>) {
       <Checkbox
         checked={assigned}
         onCheckedChange={(value) => {
-          console.log(id);
           dispatch(setAccountAssigned({ id, assigned: !!value }));
         }}
         aria-label="Select all"

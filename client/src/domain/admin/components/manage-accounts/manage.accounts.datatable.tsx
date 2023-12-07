@@ -17,22 +17,30 @@ import { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { AdminDataTableType } from '../../types/admin.types';
+import { DataTableAccount } from '../../types/admin.types';
+import { RotateCcw } from 'lucide-react';
+import { AppErrorCode, getToastErrorMessage } from '../../../app';
+import { updateUserAccounts } from '../../api';
+import toast from 'react-hot-toast';
+import { useParams } from 'react-router-dom';
+import { useAppSelector } from '@/hooks';
+import { selectAdminAwsAccounts } from '../../stores/admin.reducer';
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-  dataTableType: AdminDataTableType;
-  handleUpdate: (selected: TData[]) => void;
+interface ManageUsersDataTableProps {
+  columns: ColumnDef<DataTableAccount>[];
+  data: DataTableAccount[];
+  reload: () => void;
+  loading: boolean;
 }
 
-export function DataTable<TData, TValue>({
+export function ManageUserAwsAccountsDataTable({
   columns,
   data,
-  dataTableType,
-  handleUpdate,
-}: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = useState({});
+  reload,
+  loading,
+}: ManageUsersDataTableProps) {
+  const { userId } = useParams();
+  const awsAccounts = useAppSelector(selectAdminAwsAccounts);
   const [key, setKey] = useState('');
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -49,22 +57,50 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {
-      rowSelection,
       globalFilter,
     },
   });
 
-  const handleUpdateOperation = () => {
-    const selected = table
-      .getFilteredSelectedRowModel()
-      .rows.map((x) => x.original);
-    handleUpdate(selected);
+  const handleUpdateOperation = async () => {
+    const toastId = toast.loading('Updating...', {
+      className: 'bg-background text-foreground',
+    });
+
+    try {
+      const result = await updateUserAccounts({
+        userId: userId!,
+        accounts: awsAccounts,
+      });
+
+      if (result) {
+        toast.success('Done', {
+          className: 'bg-background text-foreground',
+          id: toastId,
+        });
+
+        handleDataReload();
+      } else {
+        toast.success('Failed', {
+          className: 'bg-background text-foreground',
+          id: toastId,
+        });
+      }
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
+    }
   };
+
+  function handleDataReload() {
+    reload();
+  }
 
   return (
     <>
@@ -78,12 +114,16 @@ export function DataTable<TData, TValue>({
           />
         </div>
         <div className="hidden md:flex md:gap-2">
-          <Button
-            variant={'default'}
-            size={'sm'}
-            onClick={handleUpdateOperation}
-          >
+          <Button variant={'default'} onClick={handleUpdateOperation}>
             Update
+          </Button>
+          <Button
+            variant={'link'}
+            size={'icon'}
+            onClick={handleDataReload}
+            disabled={loading}
+          >
+            <RotateCcw className="h-5 w-5" />
           </Button>
         </div>
       </div>
@@ -130,11 +170,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  {dataTableType == 'users'
-                    ? 'No user accounts'
-                    : dataTableType == 'accounts'
-                    ? 'No accounts'
-                    : 'No items'}
+                  No Aws accounts
                 </TableCell>
               </TableRow>
             )}

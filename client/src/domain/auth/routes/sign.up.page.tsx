@@ -32,7 +32,7 @@ export function SignUpPage() {
     setLoading(true);
     try {
       const result = await attemptSignUp({ username, password: pass });
-      if (result.success) {
+      if (!result.success) {
         toast.error('Something went wrong.', {
           className: 'bg-background text-foreground',
         });

@@ -1,7 +1,6 @@
-import { ProtectedRoute } from '@/routes/protected.route';
+import { ProtectedRoute, AccountGuard } from '@/routes';
 import { Layout } from '../../layout/components/layout';
 import { Files } from '../components/s3.files';
-import { AccountGuard } from '@/routes/account.guard';
 
 export function FilesPage() {
   return (

@@ -6,7 +6,6 @@ import { AppState, UserInfo } from '../types/app.types';
 const initialState: AppState = {
   awsAccounts: [],
   noAccounts: false,
-  currentAccount: '',
   loading: false,
   error: false,
   mobileSidebar: false,
@@ -15,6 +14,7 @@ const initialState: AppState = {
   isAuthenticated: false,
   userId: -1,
   sessionEnded: false,
+  userName: '',
 };
 
 const appSlice = createSlice({
@@ -24,14 +24,13 @@ const appSlice = createSlice({
     toggleMobileSidebar: (state, action: PayloadAction<boolean>) => {
       state.mobileSidebar = action.payload;
     },
-    setSessionEnded: (state)=> {
+    setSessionEnded: (state) => {
       state.sessionEnded = true;
     },
-    sessionEndedConfirmation: (state)=> {
+    sessionEndedConfirmation: (state) => {
       localStorage.removeItem('token');
       state.awsAccounts = [];
       state.noAccounts = false;
-      state.currentAccount = '';
       state.loading = false;
       state.error = false;
       state.mobileSidebar = false;
@@ -40,9 +39,10 @@ const appSlice = createSlice({
       state.isAuthenticated = false;
       state.userId = -1;
       state.sessionEnded = false;
+      state.userName = '';
     },
     loginSuccess: (state, action: PayloadAction<UserInfo>) => {
-      const { id, role, verified, accounts } = action.payload;
+      const { id, role, verified, accounts, username } = action.payload;
       if (!verified) {
         state.error = true;
         state.errorMessage = 'Your account is pending verification by admin.';
@@ -50,10 +50,10 @@ const appSlice = createSlice({
         state.isAuthenticated = true;
         state.userId = id;
         state.role = role;
+        state.userName = username;
 
         if (accounts.length) {
           state.awsAccounts = accounts;
-          state.currentAccount = accounts[0].aws_id;
         } else {
           state.noAccounts = true;
         }
@@ -63,7 +63,6 @@ const appSlice = createSlice({
       localStorage.removeItem('token');
       state.awsAccounts = [];
       state.noAccounts = false;
-      state.currentAccount = '';
       state.loading = false;
       state.error = false;
       state.mobileSidebar = false;
@@ -71,9 +70,7 @@ const appSlice = createSlice({
       state.errorMessage = '';
       state.isAuthenticated = false;
       state.userId = -1;
-    },
-    setCurrentAwsAccount: (state, action: PayloadAction<string>) => {
-      state.currentAccount = action.payload;
+      state.userName = '';
     },
   },
   extraReducers: (builder) => {
@@ -97,12 +94,9 @@ export const {
   toggleMobileSidebar,
   logout,
   loginSuccess,
-  setCurrentAwsAccount,
 } = appSlice.actions;
 
 export const selectUserRole = (state: RootState) => state.app.role;
-export const selectCurrentAwsAccount = (state: RootState) =>
-  state.app.currentAccount;
 export const selectAppLoading = (state: RootState) => state.app.loading;
 export const selectAppError = (state: RootState) => state.app.error;
 export const selectErrorMessage = (state: RootState) => state.app.errorMessage;
@@ -111,4 +105,6 @@ export const selectIsAuthenticated = (state: RootState) =>
 export const selectUserAwsAccounts = (state: RootState) =>
   state.app.awsAccounts;
 export const selectIfNoaccounts = (state: RootState) => state.app.noAccounts;
-export const selectAppSessionEnded = (state: RootState)=> state.app.sessionEnded;
+export const selectAppSessionEnded = (state: RootState) =>
+  state.app.sessionEnded;
+export const selectUsername = (state: RootState) => state.app.userName;

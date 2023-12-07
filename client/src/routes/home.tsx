@@ -1,24 +1,24 @@
 import { useAppSelector } from '../hooks';
-import { selectUserAwsAccounts } from '../domain/app';
-import { Link } from 'react-router-dom';
-import { ProtectedRoute } from './protected.route';
+import {
+  selectIfNoaccounts,
+  selectIsAuthenticated,
+  selectUserAwsAccounts,
+} from '../domain/app';
+import { Navigate } from 'react-router-dom';
+import { AppNoAccounts } from '../domain/app/components/app.no.accounts';
 
 export function HomePage() {
-  const userAccs = useAppSelector(selectUserAwsAccounts);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const noAccounts = useAppSelector(selectIfNoaccounts);
+  const accounts = useAppSelector(selectUserAwsAccounts);
 
-  return (
-    <ProtectedRoute>
-      <h1 className="text-3xl">Accounts</h1>
-      <ul>
-        {userAccs.map((x) => (
-          <li key={x.id}>
-            <Link to={`/s3/${x.aws_id}/buckets`}>{x.name}</Link>
-          </li>
-        ))}
-        <li>
-          <Link to={'/s3/noaccount/buckets'}>404 test</Link>
-        </li>
-      </ul>
-    </ProtectedRoute>
-  );
+  if (!isAuthenticated) {
+    return <Navigate to={`/login`} replace />;
+  }
+
+  if (noAccounts) {
+    return <AppNoAccounts />;
+  }
+
+  return <Navigate to={`/s3/${accounts[0]?.aws_id}/buckets`} />;
 }

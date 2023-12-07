@@ -24,7 +24,7 @@ export function ChangebleUserRoleDropdown(row: Row<DataTableUser>) {
         <SelectTrigger>
           <SelectValue placeholder="Role" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="flex-1">
           <SelectItem value="admin">Admin</SelectItem>
           <SelectItem value="user">User</SelectItem>
           <SelectItem value="viewer">Viewer</SelectItem>

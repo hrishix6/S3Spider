@@ -1,6 +1,5 @@
-import { ProtectedRoute } from '@/routes/protected.route';
+import { ProtectedRoute, AccountGuard } from '@/routes';
 import { Layout } from '../../layout';
-import { AccountGuard } from '@/routes/account.guard';
 import { Buckets } from '../components/buckets';
 
 export function BucketPage() {

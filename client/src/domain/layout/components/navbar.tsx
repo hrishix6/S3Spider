@@ -1,12 +1,17 @@
 import { APP_GITHUB_LINK, APP_NAME } from '@/lib/constants';
 import { ThemeToggle } from '../../theme';
 import { AccountOptionsDropdown } from './account.dropdown';
-import { AwsAccountsDropdown, selectUserRole } from '../../app';
+import {
+  AwsAccountsDropdown,
+  selectUserAwsAccounts,
+  selectUserRole,
+} from '../../app';
 import { useAppSelector } from '@/hooks';
 import { Link, useLocation } from 'react-router-dom';
 
 export function Navbar() {
   const role = useAppSelector(selectUserRole);
+  const userAccounts = useAppSelector(selectUserAwsAccounts);
   const location = useLocation();
   const { pathname } = location;
 
@@ -26,20 +31,24 @@ export function Navbar() {
         {role === 'admin' && (
           <div className="flex items-center ml-4">
             <Link
-              to={'/'}
+              to={`/s3/${userAccounts[0]?.aws_id}/buckets`}
               replace
               className="block px-2 py-1 font-semibold text-sm text-muted-foreground hover:text-primary hover:bg-accent"
             >
-              <span className={pathname == '/' ? 'text-primary' : ''}>
+              <span
+                className={pathname.startsWith('/s3') ? 'text-primary' : ''}
+              >
                 Files
               </span>
             </Link>
             <Link
-              to={'/admin'}
+              to={'/_/users'}
               replace
               className="block px-4 py-1 font-semibold text-sm text-muted-foreground hover:text-primary hover:bg-accent"
             >
-              <span className={pathname == '/admin' ? 'text-primary' : ''}>
+              <span
+                className={pathname.startsWith('/_/') ? 'text-primary' : ''}
+              >
                 Admin
               </span>
             </Link>

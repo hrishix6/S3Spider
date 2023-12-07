@@ -1,15 +1,9 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { AdminBreadCrumb, AdminState, DataTableAccount, DataTableUser, defaultAdminBreadcrumbs } from '../types/admin.types';
-import { handleAccountsClickAsync, handleAdminCrumbClickAsync, loadUsersAsync } from './admin.async.actions';
+import { AdminState, DataTableAccount, DataTableUser } from '../types/admin.types';
 import { RootState } from '@/store';
 
 const initialState: AdminState = {
-    loading: false,
-    currentUser: null,
-    breadCrumbs: defaultAdminBreadcrumbs,
-    error: false,
     users: [],
-    dataTable: "idle",
     awsAccounts: []
 };
 
@@ -17,27 +11,11 @@ const adminSlice = createSlice({
     name: 'admin',
     initialState,
     reducers: {
-        setAdminBreadcrumbs: (state, action: PayloadAction<AdminBreadCrumb[]>) => {
-            state.breadCrumbs = action.payload;
-        },
-        addAccountCrumb: (state, action: PayloadAction<AdminBreadCrumb>) => {
-            state.breadCrumbs.push(action.payload);
-        },
-        setCurrentuser: (state, action) => {
-            state.currentUser = action.payload;
-        },
         setDatatableUsers: (state, action: PayloadAction<DataTableUser[]>) => {
-            state.breadCrumbs = defaultAdminBreadcrumbs;
-            state.awsAccounts = [];
-            state.currentUser = null;
-            state.dataTable = 'users';
             state.users = action.payload;
         },
-        setDataTableAwsAccounts: (state, action: PayloadAction<{ accounts: DataTableAccount[], userId: number }>) => {
-            const { userId, accounts } = action.payload;
-            state.dataTable = "accounts";
-            state.currentUser = userId
-            state.awsAccounts = accounts;
+        setDataTableAwsAccounts: (state, action: PayloadAction<DataTableAccount[]>) => {
+            state.awsAccounts = action.payload;
         },
         setUserVerified: (state, action: PayloadAction<{ id: number, verified: boolean }>) => {
             const { id, verified } = action.payload;
@@ -61,46 +39,11 @@ const adminSlice = createSlice({
             }
         },
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(handleAdminCrumbClickAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(handleAdminCrumbClickAsync.fulfilled, (state) => {
-                state.loading = false;
-            })
-            .addCase(handleAdminCrumbClickAsync.rejected, (state) => {
-                state.loading = false;
-            })
-            .addCase(handleAccountsClickAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(handleAccountsClickAsync.fulfilled, (state) => {
-                state.loading = false;
-            })
-            .addCase(handleAccountsClickAsync.rejected, (state) => {
-                state.loading = false;
-            })
-            .addCase(loadUsersAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(loadUsersAsync.fulfilled, (state) => {
-                state.loading = false;
-            })
-            .addCase(loadUsersAsync.rejected, (state) => {
-                state.loading = false;
-            });
-    },
 });
 
 export const adminReducer = adminSlice.reducer;
 
-export const { setAccountAssigned, setUserRole, setUserVerified, setAdminBreadcrumbs, setCurrentuser, setDataTableAwsAccounts, setDatatableUsers, addAccountCrumb } = adminSlice.actions;
+export const { setAccountAssigned, setUserRole, setUserVerified, setDataTableAwsAccounts, setDatatableUsers } = adminSlice.actions;
 
-export const selectAdminLoading = (state: RootState) => state.adminStore.loading;
-export const selectAdminError = (state: RootState) => state.adminStore.error;
-export const selectAdminBreadCrumbs = (state: RootState) => state.adminStore.breadCrumbs;
-export const selectAdminDatatableType = (state: RootState) => state.adminStore.dataTable;
 export const selectUsers = (state: RootState) => state.adminStore.users;
 export const selectAdminAwsAccounts = (state: RootState) => state.adminStore.awsAccounts;
-export const seslectCurrentUser = (state: RootState) => state.adminStore.currentUser;

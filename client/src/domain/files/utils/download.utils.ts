@@ -31,8 +31,6 @@ function flushAsync(writer: WritableStreamDefaultWriter, reader: ReadableStreamD
 
 export async function downloadSingleFile(file: FileDownloadMetadataWithUrl) {
     const response = await fetch(file.url);
-
-    console.log(response.status); //0
     if (!response.ok) {
         throw new Error("failed to download");
     }
@@ -43,14 +41,11 @@ export async function downloadSingleFile(file: FileDownloadMetadataWithUrl) {
 
     const readableStream = response.body;
     const fileStream = streamSaver.createWriteStream(file.name);
-    console.log(`received file, streaming to disc`);
 
     if (window.WritableStream && readableStream.pipeTo) {
-        console.log('pipeto available');
         await readableStream.pipeTo(fileStream)
     }
     else {
-        console.log('came here pipeto not available');
         const writer = fileStream.getWriter();
         const reader = readableStream.getReader();
         await flushAsync(writer, reader);
@@ -67,7 +62,6 @@ export async function downloadFilesAsync(accountId: string, bucket: string, file
     const { data } = result;
 
     if (data.length == 1) {
-        console.log(`downloading single file`);
         return await downloadSingleFile(data[0]);
     }
 
