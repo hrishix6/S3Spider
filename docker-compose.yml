@@ -2,7 +2,7 @@ version: '3.8'
 services:
   db:
     image: postgres
-    container_name: s3explorer-db
+    container_name: s3spider-db
     restart: always
     ports:
       - '5432:5432'
@@ -18,7 +18,7 @@ services:
     image: dpage/pgadmin4
     depends_on:
       - db
-    container_name: s3explorer-pgadmin
+    container_name: s3spider-pgadmin
     restart: always
     ports:
       - '8888:80'
@@ -31,7 +31,7 @@ services:
   
   cache:
     image: redis:7-alpine
-    container_name: s3-redis-cache
+    container_name: s3spider-cache
     restart: always
     build:
       dockerfile: Dockerfile.redis
@@ -39,7 +39,35 @@ services:
       - '6379:6379'
     volumes:
       - cache:/data
-    
+    networks:
+      - postgres
+  
+  client:
+    image: s3spider-client-img
+    container_name: s3spider-client
+    restart: always
+    build:
+      context: client
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+
+  server:
+    image: s3spider-server-img
+    container_name: s3spider-server
+    depends_on:
+      - db
+      - cache
+    restart: always
+    build:
+      context: server
+      dockerfile: Dockerfile
+    ports:
+      - '5000:5000'
+    env_file:
+      - server/.env
+    networks:
+      - postgres
       
 volumes:
   db_data:

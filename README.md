@@ -53,3 +53,13 @@ You can read the full specification [TODO].
 - [@aws-sdk/client-s3](https://www.npmjs.com/package/@aws-sdk/client-s3)
 
 
+## How to setup
+
+1. You have frontend  in `client` directory and backend in `server` directory, can be deployed any which way you need.
+2. Sample `.env` files are added to show how you need to setup aws account credentials in backend.
+3. Refer to `docker-compose.yml` to see how app is configured with cache, database etc. 
+4. Once frontend and backend are deployed with database and optional caching setup, you need to add  backend and frontend domains wherever you deploy them in [allowed domains in CORS settings of buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enabling-cors-examples.html) you want users to interact with.
+
+
+
+
