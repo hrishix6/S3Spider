@@ -29,6 +29,9 @@ function flushAsync(writer: WritableStreamDefaultWriter, reader: ReadableStreamD
 
 }
 
+/**
+ * @deprecated Decided to download using link+right click instead of fetch.
+ */
 export async function downloadSingleFile(file: FileDownloadMetadataWithUrl) {
     const response = await fetch(file.url);
     if (!response.ok) {
@@ -52,6 +55,9 @@ export async function downloadSingleFile(file: FileDownloadMetadataWithUrl) {
     }
 }
 
+/**
+ * @deprecated Decided not to implement zip download, still keeping here as future reference.
+ */
 export async function downloadFilesAsync(accountId: string, region: string | null, bucket: string, files: FileDownloadMetadata[]) {
     const result = await getDownloadUrls(accountId, region, bucket, files);
 
@@ -106,6 +112,9 @@ export async function downloadFilesAsync(accountId: string, region: string | nul
     }
 }
 
+/**
+ * @deprecated Decided not to implement zip download, still keeping here as future reference.
+ */
 export function calculateDownloadMetadata(files: DataTableFile[]): FileDownloadMetadataCalc {
     if (!files.length) {
         return { size: 0, files: [] };
