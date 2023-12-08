@@ -18,21 +18,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
-import {
-  DataTableFile,
-  FileAction,
-  MaxDownloadSizeExceededError,
-} from '../../types/files.types';
-import {
-  calculateDownloadMetadata,
-  downloadFilesAsync,
-} from '../../utils/download.utils';
+import { DataTableFile, FileAction } from '../../types/files.types';
 import { useLocation, useParams } from 'react-router-dom';
 import { RotateCw } from 'lucide-react';
 import { RenameFileDialogue } from '../dialogues/rename.file.dialogue';
 import { CopyFileDialogue } from '../dialogues/copy.file.dialogue';
 import { DeleteFileConfirmation } from '../dialogues/delete.file.confirmation';
-import { copyFile, deleteFile, renameFile } from '../../api';
+import { copyFile, deleteFile, getDownloadUrls, renameFile } from '../../api';
 import {
   AppErrorCode,
   getToastErrorMessage,
@@ -40,6 +32,7 @@ import {
 } from '../../../app';
 import { getFileExtension } from '../../utils';
 import { useAppSelector } from '@/hooks';
+import { DownloadFileDialogue } from '../dialogues/download.file.dialogue';
 
 interface FileDataTableProps {
   columns: ColumnDef<DataTableFile>[];
@@ -65,6 +58,8 @@ export function FileDataTable({
   const [openDeleteDialogue, setOpenDeleteDialogue] = useState(false);
   const [openCopyDialogue, setOpenCopyDialoguee] = useState(false);
   const [openRenameDialogue, setOpenRenameDialogue] = useState(false);
+  const [openFileDLDialogue, setOpenFileDLDialogue] = useState(false);
+  const [dlUrl, setdlUrl] = useState('');
 
   useEffect(() => {
     const bouncer = setTimeout(() => {
@@ -99,8 +94,6 @@ export function FileDataTable({
         if (selected.length == 1) {
           const actions: FileAction[] = ['cp', 'dl', 'mv', 'rename', 'rm'];
           newAllowedActions.push(...actions);
-        } else {
-          newAllowedActions.push('dl');
         }
       }
     }
@@ -108,36 +101,6 @@ export function FileDataTable({
     setAllowedActions(newAllowedActions);
   }, [rowSelection]);
 
-  async function handleDownload(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    const toastId = toast.loading('Downloading...', {
-      className: 'bg-background text-foreground',
-    });
-
-    const selected = table
-      .getFilteredSelectedRowModel()
-      .rows.map((x) => x.original);
-    try {
-      const { files } = calculateDownloadMetadata(selected);
-      await downloadFilesAsync(accountId!, region, bucketId!, files);
-      toast.success('Done', {
-        className: 'bg-background text-foreground',
-        id: toastId,
-      });
-    } catch (error) {
-      if (error instanceof MaxDownloadSizeExceededError) {
-        toast.error('Download size exceeds maximum zip limit of 4GB', {
-          className: 'bg-background text-foreground',
-          id: toastId,
-        });
-        return;
-      }
-      toast.error('Failed to download, try again later.', {
-        className: 'bg-background text-foreground',
-        id: toastId,
-      });
-    }
-  }
   async function handleCopy(original: DataTableFile, filename: string) {
     setOpenCopyDialoguee(false);
     const toastId = toast.loading('Copying...', {
@@ -213,6 +176,49 @@ export function FileDataTable({
     }
   }
 
+  async function handleDownloadLink(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    const toastId = toast.loading('Downloading...', {
+      className: 'bg-background text-foreground',
+    });
+
+    const selected = table
+      .getFilteredSelectedRowModel()
+      .rows.map((x) => x.original);
+
+    if (!selected.length) {
+      return;
+    }
+
+    try {
+      const result = await getDownloadUrls(
+        accountId!,
+        region,
+        bucketId!,
+        selected.map((x) => ({
+          key: x.key,
+          mimeType: x.mimeType!,
+          name: x.name,
+        }))
+      );
+
+      if (result.success) {
+        setdlUrl(result.data[0].url);
+        setOpenFileDLDialogue(true);
+      }
+    } catch (error) {
+      toast.error('Failed to download, try again later.', {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
+    } finally {
+      toast.success('Done', {
+        className: 'bg-background text-foreground',
+        id: toastId,
+      });
+    }
+  }
+
   function handleDataReload() {
     reload(true);
   }
@@ -230,6 +236,11 @@ export function FileDataTable({
   function handleCopyDialogue(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     setOpenCopyDialoguee(true);
+  }
+
+  function handleCloseDldialogue(close: boolean) {
+    setdlUrl('');
+    setOpenFileDLDialogue(close);
   }
 
   return (
@@ -272,7 +283,7 @@ export function FileDataTable({
           <Button
             variant={'outline'}
             disabled={!allowedActions.includes('dl')}
-            onClick={handleDownload}
+            onClick={handleDownloadLink}
           >
             Download
           </Button>
@@ -354,6 +365,12 @@ export function FileDataTable({
         onClose={setOpenDeleteDialogue}
         handleDelete={handleDelete}
         file={table.getFilteredSelectedRowModel().rows[0]?.original}
+      />
+      <DownloadFileDialogue
+        open={openFileDLDialogue}
+        onClose={handleCloseDldialogue}
+        file={table.getFilteredSelectedRowModel().rows[0]?.original}
+        downloadURL={dlUrl}
       />
     </>
   );
