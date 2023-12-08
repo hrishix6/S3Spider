@@ -37,17 +37,18 @@ management a straightforward process.
 - [node](https://nodejs.org/en/)
 - [express.js](https://expressjs.com/)
 - [postgresql](https://www.postgresql.org/)
+- [redis](https://redis.io/)
 - [Kysely](https://kysely.dev/)
 - [@aws-sdk/client-s3](https://www.npmjs.com/package/@aws-sdk/client-s3)
 
+**Other tools**
 
-## Spec
-
-[TODO](#)
+- [Docker](https://www.docker.com/)
+- [Nginx](https://www.nginx.com/)
 
 ## Core Feature implementations
 
-**Done**
+**Done** (✅)
 
 - Browse Buckets
 - Browse Files
@@ -55,9 +56,8 @@ management a straightforward process.
 - Rename file
 - Delete file
 - Download file
-- Download multiple files
 
-**In Progress**
+**TODO** (📑)
 - Move files
 - Upload file
 - Upload folder
@@ -66,13 +66,18 @@ management a straightforward process.
 - Copy folder
 - Move folder
 
-**Maybe**
+**Maybe** (🤞)
 - Delete Bucket
 - Delete folder
 - Share file (with presigned url)
 - Calculate folder size ( is this even needed?)
+- Download multiple files / Download folder (need to figure out if we can somehow zip on client)
 
 ## How to use
+
+[TODO](#)
+
+## Spec
 
 [TODO](#)
 
