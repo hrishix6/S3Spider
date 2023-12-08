@@ -27,7 +27,7 @@ import {
   calculateDownloadMetadata,
   downloadFilesAsync,
 } from '../../utils/download.utils';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { RotateCw } from 'lucide-react';
 import { RenameFileDialogue } from '../dialogues/rename.file.dialogue';
 import { CopyFileDialogue } from '../dialogues/copy.file.dialogue';
@@ -55,6 +55,8 @@ export function FileDataTable({
   reload,
 }: FileDataTableProps) {
   const { accountId, bucketId } = useParams();
+  const { search } = useLocation();
+  const region = new URLSearchParams(search).get('region');
   const useRole = useAppSelector(selectUserRole);
   const [rowSelection, setRowSelection] = useState({});
   const [key, setKey] = useState('');
@@ -117,7 +119,7 @@ export function FileDataTable({
       .rows.map((x) => x.original);
     try {
       const { files } = calculateDownloadMetadata(selected);
-      await downloadFilesAsync(accountId!, bucketId!, files);
+      await downloadFilesAsync(accountId!, region, bucketId!, files);
       toast.success('Done', {
         className: 'bg-background text-foreground',
         id: toastId,
@@ -142,7 +144,7 @@ export function FileDataTable({
       className: 'bg-background text-foreground',
     });
     try {
-      const result = await copyFile(accountId!, bucketId!, {
+      const result = await copyFile(accountId!, region, bucketId!, {
         key: original.key,
         name: original.name,
         new_name: `${filename}.${getFileExtension(original.name) || ''}`,
@@ -167,7 +169,7 @@ export function FileDataTable({
     setOpenDeleteDialogue(false);
     const toastId = toast.loading('Deleting...');
     try {
-      const result = await deleteFile(accountId!, bucketId!, file.key);
+      const result = await deleteFile(accountId!, region, bucketId!, file.key);
       if (result) {
         toast.success(
           'Success! , It may take some time for changes to reflect.',
@@ -190,7 +192,7 @@ export function FileDataTable({
       className: 'bg-background text-foreground',
     });
     try {
-      const result = await renameFile(accountId!, bucketId!, {
+      const result = await renameFile(accountId!, region, bucketId!, {
         key: original.key,
         name: original.name,
         new_name: `${filename}.${getFileExtension(original.name) || ''}`,

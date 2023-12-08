@@ -5,7 +5,8 @@ import { ConfigService } from "../config/config.service";
 import { S3Service } from ".";
 import { Disc, File } from "./types";
 
-const CACHE_EXPIRY_SECONDS = 120;
+const CACHE_EXPIRY_SECONDS_BUCKETS = 3600;
+const CACHE_EXPIRY_SECONDS_CHILDREN = 120;
 
 @Service()
 export class S3CacheProxy {
@@ -51,24 +52,24 @@ export class S3CacheProxy {
         const s3Result = await this.s3Service.listBuckets(accountId);
         if (s3Result.success) {
             await this.s3cache.set(listBucketsCacheKey, JSON.stringify(s3Result.data), {
-                EX: CACHE_EXPIRY_SECONDS
+                EX: CACHE_EXPIRY_SECONDS_BUCKETS
             });
         }
         return s3Result;
 
     }
 
-    async listDirectChildren(accountId: string, bucket: string, prefix: string = "", ignoreCache: boolean) {
+    async listDirectChildren(accountId: string, region: string, bucket: string, prefix: string = "", ignoreCache: boolean) {
         const cacheEnabled = this.configService.get<boolean>("cache_enabled");
         if (!cacheEnabled) {
-            return this.s3Service.listDirectChildren(accountId, bucket, prefix);
+            return this.s3Service.listDirectChildren(accountId, region, bucket, prefix);
         }
 
         let success: boolean;
         let data: File[];
         let error: unknown;
         let cached: boolean = false;
-        const listbucketChildrenCacheKey = `s3/${accountId}/buckets/${bucket}?prefix=${prefix}`;
+        const listbucketChildrenCacheKey = `s3/${accountId}/buckets/${bucket}?prefix=${prefix}&region=${region}`;
 
         if (!ignoreCache) {
             const results = await this.s3cache.get(listbucketChildrenCacheKey);
@@ -82,10 +83,10 @@ export class S3CacheProxy {
             }
         }
 
-        const s3Result = await this.s3Service.listDirectChildren(accountId, bucket, prefix);
+        const s3Result = await this.s3Service.listDirectChildren(accountId, region, bucket, prefix);
         if (s3Result.success) {
             await this.s3cache.set(listbucketChildrenCacheKey, JSON.stringify(s3Result.data), {
-                EX: CACHE_EXPIRY_SECONDS
+                EX: CACHE_EXPIRY_SECONDS_CHILDREN
             });
         }
         return s3Result;

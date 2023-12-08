@@ -52,8 +52,8 @@ export async function downloadSingleFile(file: FileDownloadMetadataWithUrl) {
     }
 }
 
-export async function downloadFilesAsync(accountId: string, bucket: string, files: FileDownloadMetadata[]) {
-    const result = await getDownloadUrls(accountId, bucket, files);
+export async function downloadFilesAsync(accountId: string, region: string | null, bucket: string, files: FileDownloadMetadata[]) {
+    const result = await getDownloadUrls(accountId, region, bucket, files);
 
     if (!result.success) {
         throw new Error("Couldn't get download urls...");

@@ -5,5 +5,6 @@ export function toDataTableBuckets(buckets: Bucket[]): DataTableBucket[] {
         id: x.name,
         name: x.name,
         createdAt: x.createdAt,
+        region: x.region
     }));
 }

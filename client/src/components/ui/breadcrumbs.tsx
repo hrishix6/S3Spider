@@ -4,6 +4,7 @@ export function Breadcrumbs() {
   const { accountId, bucketId } = useParams();
   const { search } = useLocation();
   const query = new URLSearchParams(search);
+  const region = query.get('region');
   const prefix = query.get('prefix');
 
   const folders = prefix ? prefix.split('/').filter((x) => x !== '') : [];
@@ -17,6 +18,7 @@ export function Breadcrumbs() {
         Buckets
       </Link>
       <BucketItemCrumb
+        region={region}
         accountId={accountId}
         bucketId={bucketId}
         folders={folders}
@@ -28,17 +30,25 @@ export function Breadcrumbs() {
 interface FolderCrumbProps {
   last?: boolean;
   prefix: string;
+  region: string;
   baseUrl: string;
   name: string;
 }
 
-function FolderCrumb({ last, name, prefix, baseUrl }: FolderCrumbProps) {
+function FolderCrumb({
+  last,
+  name,
+  prefix,
+  baseUrl,
+  region,
+}: FolderCrumbProps) {
   if (last) {
     return <span className={`font-semibold`}>{name}</span>;
   }
 
   const folderChildrenQuery = new URLSearchParams({
     prefix,
+    region,
   }).toString();
 
   const folderChildrenUrl = `${
@@ -62,12 +72,14 @@ interface BucketItemCrumbProps {
   accountId?: string;
   bucketId?: string;
   folders: string[];
+  region: string | null;
 }
 
 function BucketItemCrumb({
   accountId,
   bucketId,
   folders,
+  region,
 }: BucketItemCrumbProps) {
   if (!bucketId) {
     return <></>;
@@ -82,11 +94,13 @@ function BucketItemCrumb({
     );
   }
 
+  const q = new URLSearchParams({ region: region || 'us-east-1' }).toString();
+
   return (
     <>
       <span className="mx-1 text-muted-foreground">/</span>
       <Link
-        to={`/s3/${accountId}/buckets/${encodeURIComponent(bucketId)}`}
+        to={`/s3/${accountId}/buckets/${encodeURIComponent(bucketId)}?${q}`}
         className="font-semibold text-primary hover:cursor-pointer hover:underline"
       >
         {bucketId}
@@ -99,6 +113,7 @@ function BucketItemCrumb({
           baseUrl={`/s3/${accountId}/buckets/${encodeURIComponent(bucketId)}`}
           prefix={`${folders.slice(0, index + 1).join('/')}/`}
           last={index === folders.length - 1}
+          region={region || 'us-east-1'}
         />
       ))}
     </>

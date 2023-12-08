@@ -26,7 +26,7 @@ export class App {
             optionsSuccessStatus: 200,
             methods: ["GET", "POST", "DELETE", 'PATCH', "PUT", "OPTIONS", "HEAD"],
             credentials: true,
-            allowedHeaders: "*"
+            allowedHeaders: ["Authorization", "Content-Type", "Accept"]
         };
 
         app.use(cors(corsOptions));

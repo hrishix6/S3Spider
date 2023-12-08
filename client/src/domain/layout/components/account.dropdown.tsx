@@ -9,10 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { logout, selectUserRole, selectUsername } from '../../app';
-import {
-  DropdownMenuGroup,
-  DropdownMenuSeparator,
-} from '@radix-ui/react-dropdown-menu';
+import { DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
 
 export function AccountOptionsDropdown() {
   const dispatch = useAppDispatch();

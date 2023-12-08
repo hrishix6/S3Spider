@@ -19,12 +19,14 @@ export function Files() {
   const [files, setFiles] = useState<DataTableFile[]>([]);
 
   const prefix = query.get('prefix');
+  const region = query.get('region');
 
   async function loadData(ignoreCache?: boolean) {
     setLoading(true);
     try {
       const result = await getChildren(
         accountId!,
+        region,
         bucketId!,
         prefix,
         ignoreCache

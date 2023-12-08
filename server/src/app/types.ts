@@ -35,6 +35,7 @@ export enum AppErrorCode {
     BAD_COPY_REQ = 1011,
     RENAME_FAILED = 1012,
     COPY_FAILED = 1013,
+    BAD_REGION = 1014,
 
 
     //AUTH

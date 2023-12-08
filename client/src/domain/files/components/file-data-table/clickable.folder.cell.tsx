@@ -1,16 +1,20 @@
 import { Folder, File } from 'lucide-react';
 import { DataTableFile } from '../../types/files.types';
 import { Row } from '@tanstack/react-table';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export function ClickableFolderCell(row: Row<DataTableFile>) {
+  const { search } = useLocation();
   const mimeType = row.getValue('mimeType');
   const name = row.getValue('name') as string;
   const { key } = row.original;
 
+  const region = new URLSearchParams(search).get('region') || '';
+
   if (!mimeType) {
     const folderChildrenQuery = new URLSearchParams({
       prefix: key,
+      region,
     }).toString();
 
     const folderChildrenUrl = `${

@@ -3,7 +3,7 @@ import { BaseController } from "../app/base.controller";
 import { RequestHandler, Router } from "express";
 import AsyncHandler from "express-async-handler";
 import { S3Service } from ".";
-import { BucketParseSchema, PrefixParseSchema, RequiredKeySchema, DeleteFilesRequest, GetSignedUrlsForDLRequest, FileRenameOrCopyRequest, IngoreCacheKeySchema } from "./types";
+import { BucketParseSchema, PrefixParseSchema, RequiredKeySchema, DeleteFilesRequest, GetSignedUrlsForDLRequest, FileRenameOrCopyRequest, IngoreCacheKeySchema, RegionParseSchema } from "./types";
 import { AppMiddleware } from "../app/middlewares";
 import { AppErrorCode } from "../app/types";
 import { S3CacheProxy } from "./s3.cache.service";
@@ -39,7 +39,13 @@ export class S3Controller extends BaseController {
     getChildren: RequestHandler = async (req, res) => {
 
         const { accountId } = req.params;
-        const { key, bucket, nocache } = req.query;
+        const { key, bucket, nocache, region } = req.query;
+
+        const regionParse = await RegionParseSchema.safeParseAsync(region);
+
+        if (!regionParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_REGION);
+        }
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
         const ingoreCacheParse = await IngoreCacheKeySchema.safeParseAsync(nocache);
@@ -56,7 +62,7 @@ export class S3Controller extends BaseController {
 
         const shouldIngoreCache = ingoreCacheParse.success;
 
-        const result = await this.s3CacheProxy.listDirectChildren(accountId, bucketParse.data, prefixParse.data || "", shouldIngoreCache);
+        const result = await this.s3CacheProxy.listDirectChildren(accountId, regionParse.data, bucketParse.data, prefixParse.data || "", shouldIngoreCache);
         if (!result.success) {
             return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
         }
@@ -66,8 +72,13 @@ export class S3Controller extends BaseController {
 
     getPresignedUrlsForUL: RequestHandler = async (req, res) => {
         const { accountId } = req.params;
-        const { key, bucket } = req.query;
+        const { bucket, region, key } = req.query;
 
+        const regionParse = await RegionParseSchema.safeParseAsync(region);
+
+        if (!regionParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_REGION);
+        }
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
 
         if (!bucketParse.success) {
@@ -80,7 +91,7 @@ export class S3Controller extends BaseController {
             return this.badRequest(res, AppErrorCode.INVALID_FILE);
         }
 
-        const result = await this.s3Service.getSignedUrlForDL(accountId, bucketParse.data, keyParse.data)
+        const result = await this.s3Service.getSignedUrlForDL(accountId, regionParse.data, bucketParse.data, keyParse.data)
 
         if (!result.success) {
             return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
@@ -91,7 +102,13 @@ export class S3Controller extends BaseController {
 
     getPresignedUrlsForDL: RequestHandler = async (req, res) => {
         const { accountId } = req.params;
-        const { bucket } = req.query;
+        const { bucket, region } = req.query;
+
+        const regionParse = await RegionParseSchema.safeParseAsync(region);
+
+        if (!regionParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_REGION);
+        }
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
 
@@ -107,7 +124,7 @@ export class S3Controller extends BaseController {
 
         const { files } = bodyParse.data;
 
-        const signedUrlRequests = files.map(x => this.s3Service.getSignedUrlForDL(accountId, bucketParse.data, x.key));
+        const signedUrlRequests = files.map(x => this.s3Service.getSignedUrlForDL(accountId, regionParse.data, bucketParse.data, x.key));
 
         const results = await Promise.all(signedUrlRequests);
 
@@ -132,9 +149,9 @@ export class S3Controller extends BaseController {
             return this.badRequest(res, AppErrorCode.BAD_DELETION_REQ);
         }
 
-        const { bucket, keys } = bodyParse.data;
+        const { bucket, keys, region } = bodyParse.data;
 
-        const result = await this.s3Service.deleteObjects(accountId, bucket, keys);
+        const result = await this.s3Service.deleteObjects(accountId, region, bucket, keys);
 
         if (!result.success) {
             return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
@@ -149,7 +166,13 @@ export class S3Controller extends BaseController {
 
         const { body } = req;
 
-        const { bucket } = req.query;
+        const { bucket, region } = req.query;
+
+        const regionParse = await RegionParseSchema.safeParseAsync(region);
+
+        if (!regionParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_REGION);
+        }
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
 
@@ -165,7 +188,7 @@ export class S3Controller extends BaseController {
 
         const { new_name, key } = bodyParse.data;
 
-        const result = await this.s3Service.renameObject(accountId, bucketParse.data, key, new_name);
+        const result = await this.s3Service.renameObject(accountId, regionParse.data, bucketParse.data, key, new_name);
 
         if (!result.success) {
             return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
@@ -180,7 +203,13 @@ export class S3Controller extends BaseController {
 
         const { body } = req;
 
-        const { bucket } = req.query;
+        const { bucket, region } = req.query;
+
+        const regionParse = await RegionParseSchema.safeParseAsync(region);
+
+        if (!regionParse.success) {
+            return this.badRequest(res, AppErrorCode.BAD_REGION);
+        }
 
         const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
 
@@ -196,7 +225,7 @@ export class S3Controller extends BaseController {
 
         const { new_name, key } = bodyParse.data;
 
-        const result = await this.s3Service.copyObject(accountId, bucketParse.data, key, new_name);
+        const result = await this.s3Service.copyObject(accountId, regionParse.data, bucketParse.data, key, new_name);
 
         if (!result.success) {
             return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);

@@ -4,6 +4,7 @@ import { ApiResult } from "@/domain/app";
 
 export async function getChildren(
     accountId: string,
+    region: string | null,
     bucketId: string,
     prefix: string | null,
     ignoreCache = false
@@ -12,6 +13,7 @@ export async function getChildren(
         const params: Record<string, any> = {
             bucket: bucketId,
             key: prefix || '',
+            region: region || "",
             ...(ignoreCache ? { nocache: 1 } : {})
         };
 
@@ -29,12 +31,14 @@ export async function getChildren(
 }
 
 export async function getDownloadUrls(accountId: string,
+    region: string | null,
     bucketId: string,
     files: FileDownloadMetadata[]) {
 
     try {
         const params: Record<string, string> = {
-            bucket: bucketId
+            bucket: bucketId,
+            region: region || "",
         };
 
         const q = new URLSearchParams(params).toString();
@@ -54,12 +58,14 @@ export async function getDownloadUrls(accountId: string,
 }
 
 export async function renameFile(accountId: string,
+    region: string | null,
     bucketId: string,
     payload: FileRenameOrCopyPayload
 ) {
     try {
         const params: Record<string, string> = {
-            bucket: bucketId
+            bucket: bucketId,
+            region: region || ""
         };
 
         const q = new URLSearchParams(params).toString();
@@ -74,12 +80,14 @@ export async function renameFile(accountId: string,
 }
 
 export async function copyFile(accountId: string,
+    region: string | null,
     bucketId: string,
     payload: FileRenameOrCopyPayload
 ) {
     try {
         const params: Record<string, string> = {
-            bucket: bucketId
+            bucket: bucketId,
+            region: region || ""
         };
 
         const q = new URLSearchParams(params).toString();
@@ -94,6 +102,7 @@ export async function copyFile(accountId: string,
 }
 
 export async function deleteFile(accountId: string,
+    region: string | null,
     bucketId: string,
     key: string
 ) {
@@ -102,7 +111,8 @@ export async function deleteFile(accountId: string,
         await client.post(
             `s3/${accountId}/files/rm`, {
             bucket: bucketId,
-            keys: [key]
+            keys: [key],
+            region
         }
         );
         return true;
