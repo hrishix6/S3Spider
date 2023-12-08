@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DataTableFile } from '../../types/files.types';
 
-interface CopyFileDialogueProps {
+interface DeleteFileConfirmationProps {
   open: boolean;
   onClose: (close: boolean) => void;
   handleDelete: (file: DataTableFile) => Promise<void>;
@@ -20,7 +20,7 @@ export function DeleteFileConfirmation({
   onClose,
   handleDelete,
   file,
-}: CopyFileDialogueProps) {
+}: DeleteFileConfirmationProps) {
   function onDelete() {
     handleDelete(file);
   }

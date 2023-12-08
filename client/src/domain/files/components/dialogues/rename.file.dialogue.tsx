@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 import { DataTableFile } from '../../types/files.types';
 import { getFileNameWithoutExtension } from '../../utils';
 
-interface CopyFileDialogueProps {
+interface RenameFileDialogueProps {
   open: boolean;
   onClose: (close: boolean) => void;
   handleRename: (original: DataTableFile, fileName: string) => Promise<void>;
@@ -24,7 +24,7 @@ export function RenameFileDialogue({
   onClose,
   handleRename,
   file,
-}: CopyFileDialogueProps) {
+}: RenameFileDialogueProps) {
   const [filename, setFilename] = useState<string>('');
   const [error, setError] = useState('');
 
