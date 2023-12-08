@@ -40,34 +40,6 @@ management a straightforward process.
 - [Kysely](https://kysely.dev/)
 - [@aws-sdk/client-s3](https://www.npmjs.com/package/@aws-sdk/client-s3)
 
-## Screens
-
-<figure>
-  <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">File browsing</figcaption>
-  <img src="./screens/Files.PNG" alt="file browser">
-</figure>
-
----
-
-<figure>
-  <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">Available actions on files for different roles</figcaption>
-  <img src="./screens/file_actions_for_users.png" alt="file actions for different roles">
-</figure>
-
----
-
-<figure>
-<figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">User management</figcaption>
-  <img src="./screens/user-mgmt.PNG" alt="user management">
-</figure>
-
----
-
-<figure>
-  <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">Account assignments</figcaption>
-  <img src="./screens/accounts-mgmt.PNG" alt="account assignments">
-</figure>
-
 
 ## Spec
 
@@ -103,6 +75,25 @@ management a straightforward process.
 ## How to use
 
 [TODO](#)
+
+## Screens
+
+- **Browsing files**
+
+<img src="./screens/Files.PNG" alt="file browser"><br/>
+
+- **Role based actions**
+
+<img src="./screens/file_actions_for_users.png" alt="file actions for different roles"><br/>
+
+- **User management**
+
+<img src="./screens/user-mgmt.PNG" alt="user management"><br/>
+
+- **Account management**
+
+<img src="./screens/accounts-mgmt.PNG" alt="account assignments"><br/>
+
 
 ## License
 
