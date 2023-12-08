@@ -170,7 +170,7 @@ export class S3Service {
         try {
             const client = getClient(acccountId, region);
             const dlCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
-            const signedUrl = await getSignedUrl(client, dlCommand, { expiresIn: 3600 });
+            const signedUrl = await getSignedUrl(client, dlCommand, { expiresIn: 300 });
             success = true;
             data = signedUrl;
         } catch (e) {
@@ -238,7 +238,7 @@ export class S3Service {
         try {
             const client = getClient(acccountId, region);
             const ulCommand = new PutObjectCommand({ Bucket: bucket, Key: key });
-            const signedUrl = await getSignedUrl(client, ulCommand, { expiresIn: 3600 });
+            const signedUrl = await getSignedUrl(client, ulCommand, { expiresIn: 300 });
             success = true;
             data = signedUrl;
         } catch (e) {
