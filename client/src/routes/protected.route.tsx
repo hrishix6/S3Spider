@@ -8,11 +8,13 @@ interface Props {
 }
 
 export function ProtectedRoute(props: Props) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
+  const redirectPath = `${pathname}${search}`;
+
   if (!isAuthenticated) {
-    return <Navigate to={`/login?redirect=${pathname}`} replace />;
+    return <Navigate to={`/login?redirect=${redirectPath}`} replace />;
   }
 
   return <>{props.children}</>;

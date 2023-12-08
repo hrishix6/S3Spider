@@ -15,6 +15,9 @@ export function Navbar() {
   const location = useLocation();
   const { pathname } = location;
 
+  const isAdminRoute = pathname.startsWith('/_');
+  const isFileRoute = pathname.startsWith('/s3');
+
   return (
     <nav className="flex items-center justify-between">
       <div className="flex items-center bg-background gap-1 py-1 lg:ml-2">
@@ -35,28 +38,20 @@ export function Navbar() {
               replace
               className="block px-2 py-1 font-semibold text-sm text-muted-foreground hover:text-primary hover:bg-accent"
             >
-              <span
-                className={pathname.startsWith('/s3') ? 'text-primary' : ''}
-              >
-                Files
-              </span>
+              <span className={isFileRoute ? 'text-primary' : ''}>Files</span>
             </Link>
             <Link
               to={'/_/users'}
               replace
               className="block px-4 py-1 font-semibold text-sm text-muted-foreground hover:text-primary hover:bg-accent"
             >
-              <span
-                className={pathname.startsWith('/_/') ? 'text-primary' : ''}
-              >
-                Admin
-              </span>
+              <span className={isAdminRoute ? 'text-primary' : ''}>Admin</span>
             </Link>
           </div>
         )}
       </div>
       <div className="flex items-center gap-2">
-        <AwsAccountsDropdown />
+        {isFileRoute ? <AwsAccountsDropdown /> : <></>}
         <AccountOptionsDropdown />
         <ThemeToggle />
       </div>

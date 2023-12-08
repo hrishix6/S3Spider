@@ -31,7 +31,7 @@ export function SignUpPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const result = await attemptSignUp({ username, password: pass });
+      const result = await attemptSignUp({ username, password: pass, email });
       if (!result.success) {
         toast.error('Something went wrong.', {
           className: 'bg-background text-foreground',
