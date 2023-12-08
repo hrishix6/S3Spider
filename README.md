@@ -43,23 +43,29 @@ management a straightforward process.
 ## Screens
 
 <figure>
-  <img src="./screens/Files.PNG" alt="file browser">
   <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">File browsing</figcaption>
+  <img src="./screens/Files.PNG" alt="file browser">
 </figure>
 
+---
+
 <figure>
-  <img src="./screens/file_actions_for_users.png" alt="file actions for different roles">
   <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">Available actions on files for different roles</figcaption>
+  <img src="./screens/file_actions_for_users.png" alt="file actions for different roles">
 </figure>
 
+---
+
 <figure>
+<figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">User management</figcaption>
   <img src="./screens/user-mgmt.PNG" alt="user management">
-  <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">User management</figcaption>
 </figure>
 
+---
+
 <figure>
-  <img src="./screens/accounts-mgmt.PNG" alt="account assignments">
   <figcaption style="text-align:center; font-weight:600; font-size: 1.3rem;">Account assignments</figcaption>
+  <img src="./screens/accounts-mgmt.PNG" alt="account assignments">
 </figure>
 
 
