@@ -56,19 +56,18 @@ management a straightforward process.
 - Rename file
 - Delete file
 - Download file
+- Delete folder
+- Create folder
 
 **TODO** (📑)
-- Move files
+- Move file
 - Upload file
-- Upload folder
 - Create bucket
-- Create folder
 - Copy folder
 - Move folder
 
 **Maybe** (🤞)
 - Delete Bucket
-- Delete folder
 - Share file (with presigned url)
 - Calculate folder size ( is this even needed?)
 - Download multiple files / Download folder (need to figure out if we can somehow zip on client)
