@@ -5,18 +5,18 @@ import { DataTableFile } from '../../types/files.types';
 interface DeleteFileConfirmationProps {
   open: boolean;
   onClose: (close: boolean) => void;
-  handleDelete: (file: DataTableFile) => Promise<void>;
-  file: DataTableFile;
+  handleDelete: (folder: DataTableFile) => Promise<void>;
+  folder: DataTableFile;
 }
 
-export function DeleteFileConfirmation({
+export function DeleteFolderConfirmation({
   open,
   onClose,
   handleDelete,
-  file,
+  folder,
 }: DeleteFileConfirmationProps) {
   function onDelete() {
-    handleDelete(file);
+    handleDelete(folder);
   }
 
   function onCancel() {
@@ -28,10 +28,11 @@ export function DeleteFileConfirmation({
       <DialogContent className="sm:max-w-md">
         <p className="max-w-sm mt-2 whitespace-nowrap overflow-hidden text-ellipsis">
           Deleting
-          <span className="ml-1 text-primary">{file?.name}</span>
+          <span className="ml-1 text-primary">{folder?.name}</span>
         </p>
         <p className="text-sm mt-1 text-muted-foreground">
-          This action is not reversible
+          This action is not reversible, folder and all contents will be
+          deleted.
         </p>
         <DialogFooter>
           <Button variant={'secondary'} onClick={onCancel}>

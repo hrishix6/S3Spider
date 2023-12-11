@@ -28,3 +28,9 @@ export function toDataTableFiles(files: File[]): DataTableFile[] {
         kind: x.kind,
     }));
 }
+
+export function isValidS3ObjectName(name: string) {
+    const regx = /[#~?\]\[\\\/^<>\{\|\}%`'"]/;
+
+    return regx.test(name) == false;
+}

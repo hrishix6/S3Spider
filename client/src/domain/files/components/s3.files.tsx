@@ -2,16 +2,18 @@ import { fileColumns } from './file-data-table/files.colums';
 import { FileDataTable } from './file-data-table/files.data-table';
 import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
-import { AppErrorCode, getToastErrorMessage } from '../../app';
+import { AppErrorCode, getToastErrorMessage, selectUserRole } from '../../app';
 import toast from 'react-hot-toast';
 import { useLocation, useParams } from 'react-router-dom';
 import { DataTableFile } from '../types/files.types';
 import { getChildren } from '../api';
 import { toDataTableFiles } from '../utils';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { useAppSelector } from '@/hooks';
 
 export function Files() {
   const { accountId, bucketId } = useParams();
+  const userRole = useAppSelector(selectUserRole);
   const location = useLocation();
   const { search } = location;
   const query = new URLSearchParams(search);
@@ -61,7 +63,11 @@ export function Files() {
         ) : (
           <FileDataTable
             loading={loading}
-            columns={fileColumns}
+            columns={
+              userRole == 'viewer'
+                ? fileColumns.filter((x) => x.id !== 'select')
+                : fileColumns
+            }
             data={files}
             reload={loadData}
           />

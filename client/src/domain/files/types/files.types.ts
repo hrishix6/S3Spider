@@ -47,10 +47,15 @@ export class MaxDownloadSizeExceededError extends Error {
     }
 }
 
-export type FileAction = "cp" | "mv" | "rm" | "rename" | "dl" | "ul";
+export type FileAction = "cpf" | "mvf" | "-f" | "renamef" | "dlf" | "+f" | "+d" | "-d";
 
 export interface FileRenameOrCopyPayload {
     name: string
     key: string
     new_name: string
+}
+
+export interface CreateFolderPayload {
+    name: string;
+    key: string;
 }

@@ -1,5 +1,5 @@
 import { getClient, handleAxiosError } from "@/lib/http.client";
-import { File, FileDownloadMetadata, FileDownloadMetadataWithUrl, FileRenameOrCopyPayload } from "../types/files.types";
+import { CreateFolderPayload, File, FileDownloadMetadata, FileDownloadMetadataWithUrl, FileRenameOrCopyPayload } from "../types/files.types";
 import { ApiResult } from "@/domain/app";
 
 export async function getChildren(
@@ -114,6 +114,51 @@ export async function deleteFile(accountId: string,
             keys: [key],
             region
         }
+        );
+        return true;
+    } catch (error) {
+        throw handleAxiosError(error);
+    }
+}
+
+export async function deleteFolder(accountId: string, region: string | null,
+    bucketId: string, key: string) {
+    try {
+
+        const params: Record<string, any> = {
+            bucket: bucketId,
+            key: key || '',
+            region: region || "",
+        };
+
+        const q = new URLSearchParams(params).toString();
+
+        const client = getClient();
+
+        await client.delete(
+            `s3/${accountId}/folders?${q}`,
+        );
+        return true;
+    } catch (error) {
+        throw handleAxiosError(error);
+    }
+}
+
+export async function createFolder(accountId: string, region: string | null,
+    bucketId: string, body: CreateFolderPayload) {
+    try {
+
+        const params: Record<string, any> = {
+            bucket: bucketId,
+            region: region || "",
+        };
+
+        const q = new URLSearchParams(params).toString();
+
+        const client = getClient();
+
+        await client.post(
+            `s3/${accountId}/folders?${q}`, body
         );
         return true;
     } catch (error) {
