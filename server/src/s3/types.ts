@@ -115,3 +115,8 @@ export const FileRenameOrCopyRequest = z.object({
     key: z.string().min(1),
     new_name: z.string().min(1)
 }).refine(obj => obj.name !== obj.new_name, { message: "new name cannot be same as current name" });
+
+export const CreateFolderRequest = z.object({
+    name: z.string().min(1),
+    key: z.string().optional(),
+});

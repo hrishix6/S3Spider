@@ -36,9 +36,14 @@ export class S3Service {
             const client = getDefaultClient(acccountId);
             const input = new CreateBucketCommand({ Bucket: bucket, CreateBucketConfiguration: { LocationConstraint: region } });
             const created = await client.send(input);
-            success = true;
-            data = created.Location || "";
-
+            if (created.Location) {
+                success = true;
+                data = created.Location;
+            }
+            else {
+                success = false;
+                data = "";
+            }
         } catch (e) {
             success = false;
             data = "";
@@ -53,17 +58,55 @@ export class S3Service {
     }
 
     /**
+     * 
+     * @param acccountId AWS Account id
+     * @param region bucket region
+     * @param bucket Bucket name
+     * @param prefix folder name with ke
+     */
+    async createFolder(acccountId: string, region: string, bucket: string, key: string) {
+        let success: boolean;
+        let error: unknown;
+
+        try {
+            const client = getClient(acccountId, region);
+            const input = new PutObjectCommand({ Bucket: bucket, Key: key, Body: undefined });
+
+            const result = await client.send(input);
+
+            if (result) {
+                console.log(JSON.stringify(result, null, 2));
+                success = true;
+                error = undefined;
+            }
+            else {
+                success = false;
+                error = new Error("Unable to create folder");
+            }
+
+        } catch (e) {
+            console.log('error');
+            console.log(e);
+            success = false;
+            error = e;
+        }
+
+        return { success, error };
+
+    }
+
+    /**
      * Get buckets in s3 for given account.
-     * @param acccountId Aws account Id
+     * @param accountId Aws account Id
      * @returns List of buckets.
      */
-    async listBuckets(acccountId: string) {
+    async listBuckets(accountId: string) {
         let success: boolean;
         let data: Disc[];
         let error: unknown;
         const cached = false;
         try {
-            const client = getDefaultClient(acccountId);
+            const client = getDefaultClient(accountId);
             const output = await client.send(new ListBucketsCommand({}));
             success = true;
             const buckets = output.Buckets ? output.Buckets.map(x => ({ name: x.Name!, createdAt: x.CreationDate })) : [];
@@ -162,14 +205,14 @@ export class S3Service {
      * @param key file key
      * @returns Signed url for downloading file from s3.
      */
-    async getSignedUrlForDL(acccountId: string, region: string, bucket: string, key: string) {
+    async getSignedUrlForDL(acccountId: string, region: string, bucket: string, key: string, filename: string) {
         let success: boolean;
         let data: string;
         let error: unknown;
 
         try {
             const client = getClient(acccountId, region);
-            const dlCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
+            const dlCommand = new GetObjectCommand({ Bucket: bucket, Key: key, ResponseContentDisposition: `attachment; filename="${filename}"` });
             const signedUrl = await getSignedUrl(client, dlCommand, { expiresIn: 300 });
             success = true;
             data = signedUrl;
