@@ -35,7 +35,7 @@ export const S3Regions = [
   'us-gov-west-1',
 ] as const;
 
-export const MAX_KEYS_PER_PAGE = 10;
+export const MAX_KEYS_PER_PAGE = 15;
 
 export const DEFAULT_AWS_REGION = 'us-east-1';
 
