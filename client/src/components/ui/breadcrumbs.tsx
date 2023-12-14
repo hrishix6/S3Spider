@@ -1,7 +1,11 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
 
-export function Breadcrumbs() {
-  const { accountId, bucketId } = useParams();
+interface BreadcrumbsProps {
+  disableBucket?: boolean;
+}
+
+export function Breadcrumbs({ disableBucket }: BreadcrumbsProps) {
+  const { accountId, bucketId, operation } = useParams();
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const region = query.get('region');
@@ -9,15 +13,36 @@ export function Breadcrumbs() {
 
   const folders = prefix ? prefix.split('/').filter((x) => x !== '') : [];
 
+  let baseUrl = `/s3/${encodeURIComponent(
+    accountId!
+  )}/buckets/${encodeURIComponent(bucketId!)}`;
+  if (operation) {
+    baseUrl = `/s3/${encodeURIComponent(
+      accountId!
+    )}/buckets/${encodeURIComponent(bucketId!)}/o/${operation}`;
+  }
+
   return (
     <p className="mx-1">
-      <Link
-        to={`/s3/${accountId}/buckets`}
-        className="font-semibold text-primary hover:cursor-pointer hover:underline"
-      >
-        Buckets
-      </Link>
+      {disableBucket ? (
+        <>
+          <span className={`font-semibold`}>Buckets</span>
+          {bucketId && <span className="mx-1 text-muted-foreground">/</span>}
+        </>
+      ) : (
+        <>
+          <Link
+            to={`/s3/${accountId}/buckets`}
+            className="font-semibold text-primary hover:cursor-pointer hover:underline"
+          >
+            Buckets
+          </Link>
+          {bucketId && <span className="mx-1 text-muted-foreground">/</span>}
+        </>
+      )}
+
       <BucketItemCrumb
+        baseUrl={baseUrl}
         region={region}
         accountId={accountId}
         bucketId={bucketId}
@@ -69,6 +94,7 @@ function FolderCrumb({
 }
 
 interface BucketItemCrumbProps {
+  baseUrl: string;
   accountId?: string;
   bucketId?: string;
   folders: string[];
@@ -76,31 +102,25 @@ interface BucketItemCrumbProps {
 }
 
 function BucketItemCrumb({
-  accountId,
   bucketId,
   folders,
   region,
+  baseUrl,
 }: BucketItemCrumbProps) {
   if (!bucketId) {
     return <></>;
   }
 
   if (folders.length == 0) {
-    return (
-      <>
-        <span className="mx-1 text-muted-foreground">/</span>
-        <span className={`font-semibold`}>{bucketId}</span>
-      </>
-    );
+    return <span className={`font-semibold`}>{bucketId}</span>;
   }
 
-  const q = new URLSearchParams({ region: region || 'us-east-1' }).toString();
+  const q = new URLSearchParams({ region: region! }).toString();
 
   return (
     <>
-      <span className="mx-1 text-muted-foreground">/</span>
       <Link
-        to={`/s3/${accountId}/buckets/${encodeURIComponent(bucketId)}?${q}`}
+        to={`${baseUrl}?${q}`}
         className="font-semibold text-primary hover:cursor-pointer hover:underline"
       >
         {bucketId}
@@ -110,10 +130,10 @@ function BucketItemCrumb({
         <FolderCrumb
           name={f}
           key={index}
-          baseUrl={`/s3/${accountId}/buckets/${encodeURIComponent(bucketId)}`}
+          baseUrl={baseUrl}
           prefix={`${folders.slice(0, index + 1).join('/')}/`}
           last={index === folders.length - 1}
-          region={region || 'us-east-1'}
+          region={region!}
         />
       ))}
     </>

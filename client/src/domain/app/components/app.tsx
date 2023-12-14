@@ -20,6 +20,7 @@ import { BucketPage } from '../../buckets';
 import { HomePage } from '@/routes';
 import { FilesPage } from '../../files';
 import { AppNoAccounts } from './app.no.accounts';
+import { FileOperations } from '@/domain/files/components/s3.file.ops';
 
 export function App() {
   const dispatch = useAppDispatch();
@@ -58,6 +59,10 @@ export function App() {
       <Route path="/_/users/:userId" element={<AdminUserAwsAccMgmtPage />} />
       <Route path="/s3/:accountId/buckets" element={<BucketPage />} />
       <Route path="/s3/:accountId/buckets/:bucketId" element={<FilesPage />} />
+      <Route
+        path="/s3/:accountId/buckets/:bucketId/o/:operation"
+        element={<FileOperations />}
+      />
       <Route path="*" element={<AppErrorPage />} />
     </Routes>
   );
