@@ -1,11 +1,11 @@
-CREATE DATABASE "s3explorer"
+CREATE DATABASE "s3spider"
     WITH
     OWNER = postgres
     ENCODING = 'UTF8'
     CONNECTION LIMIT = -1
     IS_TEMPLATE = False;
 
-\c s3explorer;
+\c s3spider;
 
 CREATE TYPE user_role AS ENUM('user','viewer','admin');
 

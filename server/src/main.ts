@@ -53,6 +53,10 @@ async function main() {
     const cacheEnabled = configService.get<boolean>("cache_enabled");
 
     if (cacheEnabled) {
+
+        console.log(`u- ${configService.get("cache_user")}`);
+        console.log(`p - ${configService.get("cache_pass")}`);
+
         const cacheConfig: RedisClientOptions = {
             username: configService.get("cache_user"),
             password: configService.get("cache_pass"),

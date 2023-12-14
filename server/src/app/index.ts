@@ -17,7 +17,7 @@ export class App {
         app.disable('x-powered-by');
         app.use(morgan("dev"));
 
-        const origin = process.env.NODE_ENV == "production" ? process.env["FRONTEND_CLIENT"] : "*";
+        const origin = process.env.NODE_ENV == "production" ? process.env["FRONTEND_CLIENT"]?.split(",") || [] : "*";
 
         console.log(`Allowed Origins: ${origin}`);
 
