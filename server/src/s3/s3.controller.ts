@@ -10,11 +10,13 @@ import {
   DeleteFilesRequest,
   GetSignedUrlsForDLRequest,
   FileRenameOrCopyRequest,
-  IngoreCacheKeySchema,
+  IngoreCacheSchema,
+  IngoreFilesSchema,
   RegionParseSchema,
   CreateFolderRequest,
   FileCopyRequest,
   FileMoveRequest,
+  LastfileKeySchema,
 } from './types';
 import { AppMiddleware } from '../app/middlewares';
 import { AppErrorCode } from '../app/types';
@@ -33,7 +35,7 @@ export class S3Controller extends BaseController {
   getBuckets: RequestHandler = async (req, res) => {
     const { accountId } = req.params;
     const { nocache } = req.query;
-    const ingoreCacheParse = await IngoreCacheKeySchema.safeParseAsync(nocache);
+    const ingoreCacheParse = await IngoreCacheSchema.safeParseAsync(nocache);
 
     const shouldIngoreCache = ingoreCacheParse.success;
 
@@ -51,7 +53,7 @@ export class S3Controller extends BaseController {
 
   getChildren: RequestHandler = async (req, res) => {
     const { accountId } = req.params;
-    const { key, bucket, nocache, region } = req.query;
+    const { key, bucket, nocache, region, nofiles, last } = req.query;
 
     const regionParse = await RegionParseSchema.safeParseAsync(region);
 
@@ -60,7 +62,9 @@ export class S3Controller extends BaseController {
     }
 
     const bucketParse = await BucketParseSchema.safeParseAsync(bucket);
-    const ingoreCacheParse = await IngoreCacheKeySchema.safeParseAsync(nocache);
+    const ingoreCacheParse = await IngoreCacheSchema.safeParseAsync(nocache);
+    const ingnoreFilesParse = await IngoreFilesSchema.safeParseAsync(nofiles);
+    const lastFileKeyParse = await LastfileKeySchema.safeParseAsync(last);
 
     if (!bucketParse.success) {
       return this.badRequest(res, AppErrorCode.INVALID_BUCKET);
@@ -73,13 +77,19 @@ export class S3Controller extends BaseController {
     }
 
     const shouldIngoreCache = ingoreCacheParse.success;
+    const shouldIgnoreFiles = ingnoreFilesParse.success;
+    const lastKey = lastFileKeyParse.success
+      ? lastFileKeyParse.data
+      : undefined;
 
     const result = await this.s3CacheProxy.listDirectChildren(
       accountId,
       regionParse.data,
       bucketParse.data,
       prefixParse.data || '',
-      shouldIngoreCache
+      shouldIngoreCache,
+      shouldIgnoreFiles,
+      lastKey
     );
     if (!result.success) {
       return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
@@ -363,7 +373,7 @@ export class S3Controller extends BaseController {
   };
 
   deleteFolder: RequestHandler = async (req, res) => {
-    const { accountId } = req.params;
+    //const { accountId } = req.params;
     const { key, bucket, region } = req.query;
 
     const regionParse = await RegionParseSchema.safeParseAsync(region);
@@ -384,16 +394,16 @@ export class S3Controller extends BaseController {
       return this.badRequest(res, AppErrorCode.INVALID_FOLDER);
     }
 
-    const result = await this.s3Service.deleteFolder(
-      accountId,
-      regionParse.data,
-      bucketParse.data,
-      prefixParse.data
-    );
+    // const result = await this.s3Service.deleteFolder(
+    //   accountId,
+    //   regionParse.data,
+    //   bucketParse.data,
+    //   prefixParse.data
+    // );
 
-    if (!result) {
-      return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
-    }
+    // if (!result) {
+    //   return this.serverError(res, AppErrorCode.S3_SERVICE_ERROR);
+    // }
 
     return this.noContent(res);
   };

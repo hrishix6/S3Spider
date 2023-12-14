@@ -35,9 +35,13 @@ export const S3Regions = [
   'us-gov-west-1',
 ] as const;
 
+export const MAX_KEYS_PER_PAGE = 10;
+
 export const DEFAULT_AWS_REGION = 'us-east-1';
 
 export const PrefixParseSchema = z.string().optional();
+
+export const LastfileKeySchema = z.string().optional();
 
 export const RequiredKeySchema = z.string().min(1);
 
@@ -47,7 +51,8 @@ export const RegionParseSchema = z.enum(S3Regions);
 
 export type S3Region = z.infer<typeof RegionParseSchema>;
 
-export const IngoreCacheKeySchema = z.coerce.number();
+export const IngoreCacheSchema = z.coerce.number();
+export const IngoreFilesSchema = z.coerce.number();
 
 export const AwsAccountSchema = z.object({
   id: z.string().min(1, { message: 'aws id cannot be empty' }),
@@ -146,3 +151,8 @@ export const FileMoveRequest = z.object({
   key: z.string().min(1),
   destination: z.string().optional(),
 });
+
+export interface S3GetObjectsResult {
+  files: File[];
+  done: boolean;
+}

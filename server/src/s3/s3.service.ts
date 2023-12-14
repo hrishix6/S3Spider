@@ -12,7 +12,13 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getClient, getDefaultClient } from './clients';
-import { DEFAULT_AWS_REGION, Disc, File } from './types';
+import {
+  DEFAULT_AWS_REGION,
+  Disc,
+  File,
+  MAX_KEYS_PER_PAGE,
+  S3GetObjectsResult,
+} from './types';
 import { getDirectory, toFileFromPrefix, toFilefromObj } from './utils';
 import { Service } from 'typedi';
 import { Readable } from 'stream';
@@ -170,10 +176,12 @@ export class S3Service {
     accountId: string,
     region: string,
     bucket: string,
-    prefix: string = ''
+    prefix: string = '',
+    ignoreFiles: boolean,
+    lastFileKey?: string
   ) {
     let success: boolean;
-    let data: File[];
+    const data: S3GetObjectsResult = { done: false, files: [] };
     let error: unknown;
     const cached = false;
     try {
@@ -181,17 +189,24 @@ export class S3Service {
         Bucket: bucket,
         Delimiter: '/',
         Prefix: prefix,
+        MaxKeys: MAX_KEYS_PER_PAGE,
+        ...(lastFileKey ? { StartAfter: lastFileKey } : {}),
       });
       const client = getClient(accountId, region);
-      const { Contents, CommonPrefixes } = await client.send(input);
+      const { Contents, CommonPrefixes, IsTruncated } = await client.send(
+        input
+      );
 
       const children: File[] = [];
       let f: File | null;
-      if (Contents) {
-        for (const obj of Contents) {
-          f = toFilefromObj(obj, prefix);
-          if (f) {
-            children.push(f);
+
+      if (!ignoreFiles) {
+        if (Contents) {
+          for (const obj of Contents) {
+            f = toFilefromObj(obj, prefix);
+            if (f) {
+              children.push(f);
+            }
           }
         }
       }
@@ -206,12 +221,13 @@ export class S3Service {
       }
 
       success = true;
-      data = children;
+      data.files = children;
+      data.done = !IsTruncated;
     } catch (e) {
       success = false;
       error = e;
-      data = [];
     }
+
     return {
       success,
       data,
@@ -577,42 +593,42 @@ export class S3Service {
    * @param key folder prefix / key.
    * @returns boolean flag indicating if delete was successful.
    */
-  async deleteFolder(
-    acccountId: string,
-    region: string,
-    bucket: string,
-    key: string
-  ) {
-    try {
-      const listChildrenResult = await this.listDirectChildren(
-        acccountId,
-        region,
-        bucket,
-        key
-      );
-      const keys2Delete: string[] = [key];
-      if (listChildrenResult.success) {
-        if (listChildrenResult.data.length) {
-          keys2Delete.push(...listChildrenResult.data.map((x) => x.key));
-        }
+  // async deleteFolder(
+  //   acccountId: string,
+  //   region: string,
+  //   bucket: string,
+  //   key: string
+  // ) {
+  //   try {
+  //     const listChildrenResult = await this.listDirectChildren(
+  //       acccountId,
+  //       region,
+  //       bucket,
+  //       key
+  //     );
+  //     const keys2Delete: string[] = [key];
+  //     if (listChildrenResult.success) {
+  //       if (listChildrenResult.data.length) {
+  //         keys2Delete.push(...listChildrenResult.data.map((x) => x.key));
+  //       }
 
-        const deleteResult = await this.deleteObjects(
-          acccountId,
-          region,
-          bucket,
-          keys2Delete
-        );
+  //       const deleteResult = await this.deleteObjects(
+  //         acccountId,
+  //         region,
+  //         bucket,
+  //         keys2Delete
+  //       );
 
-        if (deleteResult.success) {
-          return true;
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error(error);
-      return false;
-    }
-  }
+  //       if (deleteResult.success) {
+  //         return true;
+  //       }
+  //     }
+  //     return false;
+  //   } catch (error) {
+  //     console.error(error);
+  //     return false;
+  //   }
+  // }
 
   // #endregion dangerous-operations
 }
