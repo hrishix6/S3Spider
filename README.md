@@ -58,9 +58,9 @@ management a straightforward process.
 - Download file
 - Delete folder
 - Create folder
+- Move file
 
 **TODO** (📑)
-- Move file
 - Upload file
 - Create bucket
 - Copy folder
