@@ -80,3 +80,8 @@ export interface FileMovePayload {
   key: string;
   destination: string;
 }
+
+export interface S3GetFilesResult {
+  files: File[];
+  done: boolean;
+}

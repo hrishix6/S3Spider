@@ -1,9 +1,5 @@
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import {
-  AppErrorCode,
-  getToastErrorMessage,
-  selectUserRole,
-} from '@/domain/app';
+import { AppErrorCode, getToastErrorMessage } from '@/domain/app';
 import { useAppSelector } from '@/hooks';
 import { useEffect, useState } from 'react';
 import {
@@ -36,7 +32,6 @@ import { selectCurrentFile } from '../stores/file.reducer';
 export function FileBrowser() {
   const { accountId, bucketId, operation } = useParams();
   const file = useAppSelector(selectCurrentFile);
-  const userRole = useAppSelector(selectUserRole);
   const navigate = useNavigate();
   const location = useLocation();
   const { search } = location;
@@ -45,7 +40,6 @@ export function FileBrowser() {
   const [files, setFiles] = useState<DataTableFile[]>([]);
   const [rowSelection, setRowSelection] = useState({});
   const [openCopyDialogue, setOpenCopyDialogue] = useState(false);
-  const [openMoveDialogue, setOpenMoveDialogue] = useState(false);
   const [disableOp, setDisableOp] = useState(false);
 
   const prefix = query.get('prefix');
@@ -81,7 +75,9 @@ export function FileBrowser() {
         region,
         bucketId!,
         prefix,
-        ignoreCache
+        ignoreCache,
+        undefined,
+        true
       );
       if (!result.success) {
         toast.error(`Coudn't load files.`, {
@@ -89,7 +85,8 @@ export function FileBrowser() {
         });
         return;
       }
-      setFiles(toDataTableFiles(result.data));
+      const { files } = result.data;
+      setFiles(toDataTableFiles(files));
     } catch (error) {
       const e = error as AppErrorCode;
       toast.error(getToastErrorMessage(e), {

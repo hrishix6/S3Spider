@@ -1,12 +1,12 @@
 import { getClient, handleAxiosError } from '@/lib/http.client';
 import {
   CreateFolderPayload,
-  File,
   FileCopyPayload,
   FileDownloadMetadata,
   FileDownloadMetadataWithUrl,
   FileMovePayload,
   FileRenameOrCopyPayload,
+  S3GetFilesResult,
 } from '../types/files.types';
 import { ApiResult } from '@/domain/app';
 
@@ -15,7 +15,9 @@ export async function getChildren(
   region: string | null,
   bucketId: string,
   prefix: string | null,
-  ignoreCache = false
+  ignoreCache = false,
+  lastKey?: string,
+  ignoreFiles?: boolean
 ) {
   try {
     const params: Record<string, any> = {
@@ -23,6 +25,8 @@ export async function getChildren(
       key: prefix || '',
       region: region || '',
       ...(ignoreCache ? { nocache: 1 } : {}),
+      ...(lastKey ? { last: lastKey } : {}),
+      ...(ignoreFiles ? { nofiles: 1 } : {}),
     };
 
     const q = new URLSearchParams(params).toString();
@@ -31,7 +35,7 @@ export async function getChildren(
       `s3/${accountId}/files${q ? `?${q}` : ''}`
     );
 
-    const result = response.data as ApiResult<File[]>;
+    const result = response.data as ApiResult<S3GetFilesResult>;
     return result;
   } catch (error) {
     throw handleAxiosError(error);

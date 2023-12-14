@@ -9,22 +9,35 @@ import { DataTableFile } from '../types/files.types';
 import { getChildren } from '../api';
 import { toDataTableFiles } from '../utils';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import { useAppSelector } from '@/hooks';
+import { useAppDispatch, useAppSelector } from '@/hooks';
+import {
+  clearBeforeInitialLoad,
+  nextPageLoaded,
+  prevPageLoaded,
+  selectIsNoNext,
+  selectIsNoPrev,
+  selectPrevKey,
+} from '../stores/file.reducer';
 
 export function Files() {
   const { accountId, bucketId } = useParams();
+  const dispatch = useAppDispatch();
   const userRole = useAppSelector(selectUserRole);
   const location = useLocation();
   const { search } = location;
   const query = new URLSearchParams(search);
   const [loading, setLoading] = useState<boolean>(false);
   const [files, setFiles] = useState<DataTableFile[]>([]);
+  const noPrevPage = useAppSelector(selectIsNoPrev);
+  const noNextPage = useAppSelector(selectIsNoNext);
+  const prevKey = useAppSelector(selectPrevKey);
 
   const prefix = query.get('prefix');
   const region = query.get('region');
 
   async function loadData(ignoreCache?: boolean) {
     setLoading(true);
+    dispatch(clearBeforeInitialLoad());
     try {
       const result = await getChildren(
         accountId!,
@@ -39,7 +52,73 @@ export function Files() {
         });
         return;
       }
-      setFiles(toDataTableFiles(result.data));
+      const { done, files } = result.data;
+      setFiles(toDataTableFiles(files));
+      dispatch(nextPageLoaded({ done, lastKey: undefined }));
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadNextPage(ignoreCache?: boolean) {
+    setLoading(true);
+    const lastKey = files[files.length - 1]?.key;
+    try {
+      const result = await getChildren(
+        accountId!,
+        region,
+        bucketId!,
+        prefix,
+        ignoreCache,
+        lastKey
+      );
+
+      if (!result.success) {
+        toast.error(`Coudn't load files.`, {
+          className: 'bg-background text-foreground',
+        });
+        return;
+      }
+      const { files, done } = result.data;
+      setFiles(toDataTableFiles(files));
+      dispatch(nextPageLoaded({ done, lastKey }));
+    } catch (error) {
+      const e = error as AppErrorCode;
+      toast.error(getToastErrorMessage(e), {
+        className: 'bg-background text-foreground',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadPrevPage(ignoreCache?: boolean) {
+    setLoading(true);
+    const lastKey = prevKey;
+    try {
+      const result = await getChildren(
+        accountId!,
+        region,
+        bucketId!,
+        prefix,
+        ignoreCache,
+        lastKey
+      );
+
+      if (!result.success) {
+        toast.error(`Coudn't load files.`, {
+          className: 'bg-background text-foreground',
+        });
+        return;
+      }
+      const { files, done } = result.data;
+      setFiles(toDataTableFiles(files));
+      dispatch(prevPageLoaded(done));
     } catch (error) {
       const e = error as AppErrorCode;
       toast.error(getToastErrorMessage(e), {
@@ -70,6 +149,10 @@ export function Files() {
             }
             data={files}
             reload={loadData}
+            handleNext={loadNextPage}
+            handlePrev={loadPrevPage}
+            noPrev={noPrevPage}
+            noNext={noNextPage}
           />
         )}
       </div>

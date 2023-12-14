@@ -1,29 +1,17 @@
 import {
   ColumnDef,
-  flexRender,
   getCoreRowModel,
   useReactTable,
   getFilteredRowModel,
 } from '@tanstack/react-table';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useEffect, useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import toast from 'react-hot-toast';
 import { DataTableFile, FileAction } from '../../types/files.types';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { RenameFileDialogue } from '../dialogues/rename.file.dialogue';
-import { CopyFileDialogue } from '../dialogues/copy.file.dialogue';
 import { DeleteFileConfirmation } from '../dialogues/delete.file.confirmation';
 import {
-  copyFile,
   createFolder,
   deleteFile,
   deleteFolder,
@@ -46,12 +34,17 @@ import { FileActionsDropdown } from '../file.actions.dropdown';
 import { Button } from '@/components/ui/button';
 import { RotateCw } from 'lucide-react';
 import { setCurrentFile } from '../../stores/file.reducer';
+import { FilesPaginateFooter } from './files.paginate.footer';
 
 interface FileDataTableProps {
   columns: ColumnDef<DataTableFile>[];
   data: DataTableFile[];
   reload: (ingoreCache?: boolean) => Promise<void>;
   loading: boolean;
+  noNext: boolean;
+  handleNext: (ignoreCache?: boolean) => void;
+  handlePrev: (ignoreCache?: boolean) => void;
+  noPrev: boolean;
 }
 
 export function FileDataTable({
@@ -59,6 +52,10 @@ export function FileDataTable({
   data,
   loading,
   reload,
+  noNext,
+  noPrev,
+  handleNext,
+  handlePrev,
 }: FileDataTableProps) {
   const { accountId, bucketId } = useParams();
   const { search } = useLocation();
@@ -420,6 +417,12 @@ export function FileDataTable({
         </div>
       </div>
       <FileTable table={table} colSpan={columns.length} />
+      <FilesPaginateFooter
+        noPrev={noPrev}
+        noNext={noNext}
+        handleNext={handleNext}
+        handlePrev={handlePrev}
+      />
       <RenameFileDialogue
         open={openRenameDialogue}
         onClose={setOpenRenameDialogue}
