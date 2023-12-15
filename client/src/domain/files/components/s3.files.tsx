@@ -9,35 +9,25 @@ import { DataTableFile } from '../types/files.types';
 import { getChildren } from '../api';
 import { toDataTableFiles } from '../utils';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import { useAppDispatch, useAppSelector } from '@/hooks';
-import {
-  clearBeforeInitialLoad,
-  nextPageLoaded,
-  prevPageLoaded,
-  selectIsNoNext,
-  selectIsNoPrev,
-  selectPrevKey,
-} from '../stores/file.reducer';
+import { useAppSelector } from '@/hooks';
+import { useS3Pagination } from '@/hooks/use.s3.pagination';
 
 export function Files() {
   const { accountId, bucketId } = useParams();
-  const dispatch = useAppDispatch();
   const userRole = useAppSelector(selectUserRole);
   const location = useLocation();
   const { search } = location;
   const query = new URLSearchParams(search);
   const [loading, setLoading] = useState<boolean>(false);
   const [files, setFiles] = useState<DataTableFile[]>([]);
-  const noPrevPage = useAppSelector(selectIsNoPrev);
-  const noNextPage = useAppSelector(selectIsNoNext);
-  const prevKey = useAppSelector(selectPrevKey);
+  const { state: pagination, nextPage, prevPage, clear } = useS3Pagination();
 
   const prefix = query.get('prefix');
   const region = query.get('region');
 
   async function loadData(ignoreCache?: boolean) {
     setLoading(true);
-    dispatch(clearBeforeInitialLoad());
+    clear();
     try {
       const result = await getChildren(
         accountId!,
@@ -54,7 +44,7 @@ export function Files() {
       }
       const { done, files } = result.data;
       setFiles(toDataTableFiles(files));
-      dispatch(nextPageLoaded({ done, lastKey: undefined }));
+      nextPage(done, undefined);
     } catch (error) {
       const e = error as AppErrorCode;
       toast.error(getToastErrorMessage(e), {
@@ -86,7 +76,7 @@ export function Files() {
       }
       const { files, done } = result.data;
       setFiles(toDataTableFiles(files));
-      dispatch(nextPageLoaded({ done, lastKey }));
+      nextPage(done, lastKey);
     } catch (error) {
       const e = error as AppErrorCode;
       toast.error(getToastErrorMessage(e), {
@@ -99,7 +89,7 @@ export function Files() {
 
   async function loadPrevPage(ignoreCache?: boolean) {
     setLoading(true);
-    const lastKey = prevKey;
+    const lastKey = pagination.prevKeys[pagination.prevIndex];
     try {
       const result = await getChildren(
         accountId!,
@@ -118,7 +108,7 @@ export function Files() {
       }
       const { files, done } = result.data;
       setFiles(toDataTableFiles(files));
-      dispatch(prevPageLoaded(done));
+      prevPage(done);
     } catch (error) {
       const e = error as AppErrorCode;
       toast.error(getToastErrorMessage(e), {
@@ -151,8 +141,8 @@ export function Files() {
             reload={loadData}
             handleNext={loadNextPage}
             handlePrev={loadPrevPage}
-            noPrev={noPrevPage}
-            noNext={noNextPage}
+            noPrev={pagination.prevIndex < 0}
+            noNext={pagination.done}
           />
         )}
       </div>
